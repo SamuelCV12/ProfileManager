@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Tabla de Usuarios básicos
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  profile   Profile? // Relación con el perfil detallado
+}
+
+// Tabla del Perfil (para tu "perfil 100%")
+model Profile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  skills      String[] // Ej: ["React", "Node.js"]
+  preferences String[] // Ej: ["Remoto", "Startups"]
+  completitud Int      @default(0) // Barra de completitud de 0 a 100
+}
+
+// Tabla de Vacantes
+model Vacancy {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  mustHave    String[] // Requisitos obligatorios
+  niceToHave  String[] // Requisitos deseables
+  isActive    Boolean  @default(true)
+}
