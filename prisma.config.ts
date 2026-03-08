@@ -1,12 +1,12 @@
-import { defineConfig } from '@prisma/config'
-import { config } from 'dotenv'
-
-// Forzar la lectura del archivo .env
-config()
+import "dotenv/config"; // <- Esta es la línea mágica que faltaba
+import { defineConfig, env } from "@prisma/config"; // O "prisma/config" dependiendo de cómo lo autocompletó tu IDE
 
 export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
   datasource: {
-    // Usamos process.env estándar de Node.js
-    url: process.env.DATABASE_URL as string
-  }
-})
+    url: env("DATABASE_URL"),
+  },
+});
