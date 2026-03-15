@@ -36,21 +36,24 @@ export default async function DashboardCompanyPage() {
 
   // 4. Mapeamos las vacantes de la empresa a la interfaz de Figma
   const cargosReales = (empresaActiva?.vacancies || []).map(v => ({
-    id: v.id,
-    titulo: v.title,
-    descripcion: v.description,
-    salario: 5000000,
-    ubicacion: empresaActiva?.location || "Remoto",
-    modalidad: v.modality as "Remoto" | "Presencial" | "Híbrido",
-    estado: v.isActive ? "Activo" as const : "Pausado" as const,
-    candidatosPostulados: v.applications.length // Contamos las postulaciones reales
-  }));
+  id: v.id,
+  titulo: v.title,
+  descripcion: v.description,
+  salario: 5000000,
+  ubicacion: empresaActiva?.location || "Remoto",
+  modalidad: v.modality as "Remoto" | "Presencial" | "Híbrido",
+  estado: v.isActive ? "Activo" as const : "Pausado" as const,
+  candidatosPostulados: v.applications.length,
+  mustHave: v.mustHave  // ← agregar esta línea
+}));
 
   // Renderizamos el componente cliente pasándole los datos extraídos de la base de datos
   return (
-    <ClientDashboard 
-      candidatosIniciales={candidatosReales} 
-      cargosDisponiblesIniciales={cargosReales} 
-    />
-  );
+  <ClientDashboard 
+    candidatosIniciales={candidatosReales} 
+    cargosDisponiblesIniciales={cargosReales}
+    companyId={empresaActiva?.id || ""}
+    companyInitials={empresaActiva?.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2) || "EM"}
+  />
+);
 }

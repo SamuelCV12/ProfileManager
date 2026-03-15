@@ -3,7 +3,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, SlidersHorizontal, LogOut } from "lucide-react";
 import { JobCard } from "../../components/ui/JobCard";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -13,49 +14,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 
 export default function ClientDashboard({ profile, vacantes, postulaciones }: any) {
+  const router = useRouter();
   const [busqueda, setBusqueda] = useState("");
   const [filtroModalidad, setFiltroModalidad] = useState<string>("todas");
   const [filtroSalarioMin, setFiltroSalarioMin] = useState<string>("");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
-  // 🧠 LÓGICA DE FILTRADO EN TIEMPO REAL
   const vacantesFiltradas = vacantes.filter((job: any) => {
-    // 1. Filtro por Búsqueda (Puesto o Empresa)
     if (busqueda && 
         !job.title.toLowerCase().includes(busqueda.toLowerCase()) && 
         !job.company.toLowerCase().includes(busqueda.toLowerCase())) {
       return false;
     }
-
-    // 2. Filtro por Modalidad
     if (filtroModalidad !== "todas" && job.modalidad !== filtroModalidad) {
       return false;
     }
-
-    // 3. Filtro por Salario Mínimo
     if (filtroSalarioMin && job.salarioMin < parseInt(filtroSalarioMin)) {
       return false;
     }
-
     return true;
   });
 
   return (
     <div className="min-h-screen bg-white text-black"> 
-      {/* HEADER TIPO FIGMA */}
       <header className="bg-[#7FFFD4] py-4 px-6 flex justify-between items-center shadow-sm">
         <h2 className="text-2xl font-black text-black tracking-tight">ProfileManager</h2>
-        <div className="flex items-center gap-4">
-          
-          {/* ✅ CORRECCIÓN: Link que pasa el ID a la URL para cargar el perfil correcto */}
+        <div className="flex items-center gap-3">
           <Link 
             href={`/profile?id=${profile?.id}`}
             title="Ir a mi perfil"
             className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 hover:scale-105 hover:bg-gray-50 transition-all cursor-pointer"
           >
-             {profile?.firstName?.charAt(0) || "U"}
+            {profile?.firstName?.charAt(0) || "U"}
           </Link>
-
+          <Button
+            variant="outline"
+            onClick={() => router.push("/")}
+            className="h-9 border-black/20 text-black font-semibold rounded-xl hover:bg-white/50 gap-2"
+          >
+            <LogOut className="w-4 h-4" /> Cerrar Sesión
+          </Button>
         </div>
       </header>
 
@@ -73,7 +71,6 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
             </div>
           </div>
 
-          {/* BARRA DE BÚSQUEDA Y FILTROS */}
           <div className="space-y-4">
             <div className="flex gap-3">
               <div className="relative flex-1">
@@ -95,7 +92,6 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
               </Button>
             </div>
 
-            {/* PANEL DESPLEGABLE DE FILTROS */}
             {mostrarFiltros && (
               <Card className="border-gray-100 bg-white rounded-2xl shadow-sm">
                 <CardContent className="pt-6">
