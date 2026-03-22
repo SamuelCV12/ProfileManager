@@ -1,53 +1,139 @@
 // components/ui/JobCard.tsx
-"use client"; // <-- Esto permite usar interactividad (clics y estados)
+"use client";
 
 import { useState } from "react";
-import { MapPin, EyeOff, Loader2 } from "lucide-react";
+import { MapPin, EyeOff, Eye, Loader2, Monitor, DollarSign } from "lucide-react";
 import { applyToVacancy } from "../../app/actions/apply";
 
-export function JobCard({ id, title, company, location, match, tags, profileId, isApplied }: any) {
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  POSTULADO:   { label: "Postulado",           color: "bg-blue-50 text-blue-700" },
+  EN_REVISION: { label: "En Revisión",         color: "bg-yellow-50 text-yellow-700" },
+  ENTREVISTA:  { label: "Entrevista Agendada", color: "bg-purple-50 text-purple-700" },
+  RECHAZADO:   { label: "Rechazado",           color: "bg-red-50 text-red-700" },
+};
+
+function getMatchColor(match: number) {
+  if (match >= 80) return "bg-[#7FFFD4]/40 text-[#1a7a65] border border-[#5FD3BC]/40";
+  if (match >= 50) return "bg-yellow-50 text-yellow-700 border border-yellow-200";
+  return "bg-red-50 text-red-500 border border-red-100";
+}
+
+export function JobCard({ 
+  id, title, company, location, match, tags, profileId, 
+  isApplied, status, salaryRange, description, modalidad, isUrgent,
+  onHide, isHidden
+}: any) {
   const [isLoading, setIsLoading] = useState(false);
-  const [applied, setApplied] = useState(isApplied); // Controla si ya se postuló
+  const [applied, setApplied] = useState(isApplied);
 
   const handleApply = async () => {
     if (!profileId) return alert("Error: Perfil no encontrado.");
-    
     setIsLoading(true);
     const result = await applyToVacancy(id, profileId);
     setIsLoading(false);
-
     if (result.success) {
       setApplied(true);
-      alert("¡Te has postulado exitosamente!"); 
+      alert("¡Te has postulado exitosamente!");
     } else {
       alert(result.error);
     }
   };
 
+  const statusConfig = status ? STATUS_CONFIG[status] || STATUS_CONFIG["POSTULADO"] : null;
+  const esVacante = match !== null && match !== undefined;
+
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all relative">
-      <div className="flex justify-between items-start mb-4">
-        <span className="px-3 py-1 rounded-full text-xs bg-[#7FFFD4]/20 text-[#2D8A75] font-bold">
-          {match ? `${match}% Match` : "Postulado"}
-        </span>
-        <EyeOff className="w-5 h-5 text-gray-300 cursor-pointer hover:text-gray-500" />
-      </div>
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-3">
       
-      <h3 className="text-xl font-bold text-black mb-1">{title}</h3>
-      <p className="text-gray-500 text-sm mb-4">{company}</p>
-      
-      <div className="flex items-center gap-2 text-gray-600 text-sm mb-6">
-        <MapPin className="w-4 h-4 text-[#5FD3BC]" /> {location}
+      {/* FILA SUPERIOR: badges + ocultar */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          {esVacante ? (
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+              isUrgent ? "bg-red-100 text-red-600" : "bg-[#7FFFD4]/30 text-[#2D8A75]"
+            }`}>
+              {isUrgent ? "Urgente" : "Abierta"}
+            </span>
+          ) : (
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig?.color || "bg-gray-100 text-gray-600"}`}>
+              {statusConfig?.label || "Postulado"}
+            </span>
+          )}
+
+          {esVacante && match > 0 && (
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${getMatchColor(match)}`}>
+              {match}% Match
+            </span>
+          )}
+        </div>
+
+        {/* ✅ Botón ocultar/mostrar — solo en vacantes */}
+        {onHide && (
+          <button
+            onClick={onHide}
+            title={isHidden ? "Mostrar vacante" : "Ocultar vacante"}
+            className="text-gray-300 hover:text-gray-500 transition-colors"
+          >
+            {isHidden ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+          </button>
+        )}
       </div>
 
-      {/* BOTÓN INTERACTIVO */}
-      <button 
+      {/* TÍTULO Y EMPRESA */}
+      <div>
+        <h3 className="text-lg font-bold text-black leading-tight">{title}</h3>
+        <p className="text-gray-500 text-sm mt-0.5">{company}</p>
+      </div>
+
+      {/* UBICACIÓN Y MODALIDAD */}
+      <div className="flex flex-col gap-1.5 text-sm text-gray-500">
+        <span className="flex items-center gap-1">
+          <MapPin className="w-4 h-4 text-[#5FD3BC]" /> {location}
+        </span>
+        {modalidad && (
+          <span className="flex items-center gap-1">
+            <Monitor className="w-4 h-4 text-[#5FD3BC]" /> {modalidad} • Tiempo completo
+          </span>
+        )}
+      </div>
+
+      {/* SALARIO */}
+      {salaryRange && (
+        <div className="flex items-center gap-1 text-sm text-gray-600 font-medium">
+          <DollarSign className="w-4 h-4 text-[#5FD3BC]" /> {salaryRange}
+        </div>
+      )}
+
+      {/* DESCRIPCIÓN */}
+      {description && (
+        <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
+      )}
+
+      {/* TAGS */}
+      {tags && tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {tags.slice(0, 3).map((tag: string, i: number) => (
+            <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+              {tag}
+            </span>
+          ))}
+          {tags.length > 3 && (
+            <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">
+              +{tags.length - 3}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* BOTÓN */}
+      <button
         onClick={handleApply}
         disabled={isLoading || applied}
-        className={`w-full flex justify-center items-center font-bold rounded-xl h-11 transition-colors ${
-          applied 
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-            : "bg-[#7FFFD4] text-black hover:bg-[#5FD3BC]"
+        style={!applied ? { background: "linear-gradient(to right, #7FFFD4, #98FF98)" } : {}}
+        className={`w-full flex justify-center items-center font-bold rounded-xl h-11 transition-all mt-auto ${
+          applied
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "text-black hover:opacity-90"
         }`}
       >
         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : applied ? "Postulado ✓" : "Postularme"}

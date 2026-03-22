@@ -12,39 +12,36 @@ enum Role {
   ADMIN
 }
 
-// 1. LLAVE MAESTRA: Maneja el Login para todos
 model User {
-  id                 String              @id @default(uuid())
-  email              String              @unique
-  password           String              // En producción irá hasheado
-  role               Role                @default(CANDIDATE)
-  profile            Profile?            // Datos si es Candidato
-  company            Company?            // Datos si es Empresa
-  createdAt          DateTime            @default(now())
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(CANDIDATE)
+  profile   Profile?
+  company   Company?
+  createdAt DateTime @default(now())
 }
 
-// 2. DATOS DEL CANDIDATO
 model Profile {
-  id            String        @id @default(uuid())
-  userId        String        @unique
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  firstName     String
-  lastName      String
-  birthDate     DateTime?
-  description   String?
-  desiredRole   String?
-  resumeUrl     String?
-  avatarUrl     String?
-  // NUEVOS CAMPOS PARA LA HISTORIA DE USUARIO
-  education     String[]      // Para guardar la lista de estudios
-  experience    String[]      // Para guardar la lista de trabajos
-  skills        String[]
-  preferences   String[]
-  completitud   Int           @default(0)
-  applications  Application[]
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  birthDate    DateTime?
+  description  String?
+  desiredRole  String?
+  resumeUrl    String?
+  avatarUrl    String?
+  phone        String?       
+  education    String[]
+  experience   String[]
+  skills       String[]
+  preferences  String[]
+  completitud  Int           @default(0)
+  applications Application[]
 }
 
-// 3. DATOS DE LA EMPRESA
 model Company {
   id            String    @id @default(uuid())
   userId        String    @unique
@@ -52,28 +49,26 @@ model Company {
   name          String
   nit           String    @unique
   location      String
-  coreBusiness  String    // Tu Core de Negocios
+  coreBusiness  String
   employeeCount Int
-  vacancies     Vacancy[] // Sus vacantes activas
+  vacancies     Vacancy[]
 }
 
-// 4. VACANTES / CARGOS
 model Vacancy {
-  id            String        @id @default(uuid())
-  companyId     String
-  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  title         String
-  description   String
-  modality      String        @default("Presencial")
-  salaryRange   String?
-  mustHave      String[]
-  niceToHave    String[]
-  isActive      Boolean       @default(true)
-  applications  Application[]
-  createdAt     DateTime      @default(now())
+  id           String        @id @default(uuid())
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  modality     String        @default("Presencial")
+  salaryRange  String?
+  mustHave     String[]
+  niceToHave   String[]
+  isActive     Boolean       @default(true)
+  applications Application[]
+  createdAt    DateTime      @default(now())
 }
 
-// 5. POSTULACIONES
 model Application {
   id            String    @id @default(uuid())
   profileId     String
@@ -85,7 +80,6 @@ model Application {
   appliedAt     DateTime  @default(now())
 }
 
-// 6. SEGURIDAD
 model PasswordResetToken {
   id      String   @id @default(uuid())
   email   String
