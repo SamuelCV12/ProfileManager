@@ -1,4 +1,4 @@
-/**
+/** 
  * 
  * @param profile  
  * @param vacancy 
@@ -13,35 +13,35 @@
  * 
  * Nota: Este algoritmo es una aproximación básica y puede ser mejorado con técnicas más avanzadas como NLP
  */ 
-export function calculateMatchScore(profile: any, vacancy: any) {
-  if (!profile || !vacancy) return 0;
-  let score = 0;
+export function calculateMatchScore(profile: any, vacancy: any) { // Aquí se podrían definir tipos más específicos para profile y vacancy en lugar de usar "any" para mayor seguridad de tipo.
+  if (!profile || !vacancy) return 0; // Si no hay perfil o vacante, el score es 0
+  let score = 0; // Inicializamos el score en 0
 
   // 1. Coincidencia por Cargo (30%) - por palabras clave
-  const profileWords = profile.desiredRole?.toLowerCase().split(" ") || [];
-  const titleWords = vacancy.title.toLowerCase().split(" ");
-  if (profileWords.some((word: string) => word.length > 3 && titleWords.includes(word))) {
+  const profileWords = profile.desiredRole?.toLowerCase().split(" ") || []; // Convertimos el desiredRole en un array de palabras
+  const titleWords = vacancy.title.toLowerCase().split(" "); // Convertimos el título de la vacante en un array de palabras
+  if (profileWords.some((word: string) => word.length > 3 && titleWords.includes(word))) {   // Si alguna palabra clave del desiredRole coincide con el título de la vacante, otorgamos los puntos completos
     score += 30;
   }
 
   // 2. Habilidades Must-Have (50%) - skills + education + experience
-  const candidateSkills = [
+  const candidateSkills = [ // Combinamos skills, education y experience en un solo array de habilidades del candidato
     ...( profile.skills || []),
     ...(profile.education || []),
     ...(profile.experience || [])
-  ].join(" ").toLowerCase();
+  ].join(" ").toLowerCase(); // Convertimos todo a una sola cadena para facilitar la búsqueda de palabras clave
 
   let matches = 0;
-  vacancy.mustHave.forEach((skill: string) => {
-    if (candidateSkills.includes(skill.toLowerCase())) matches++;
+  vacancy.mustHave.forEach((skill: string) => { // Para cada habilidad must-have de la vacante, verificamos si el candidato la tiene en su conjunto de habilidades/educación/experiencia
+    if (candidateSkills.includes(skill.toLowerCase())) matches++; // Si el candidato tiene esa habilidad, incrementamos el contador de matches
   });
 
-  if (vacancy.mustHave.length > 0) {
-    score += (matches / vacancy.mustHave.length) * 50;
+  if (vacancy.mustHave.length > 0) { // Si la vacante tiene habilidades must-have listadas, calculamos el porcentaje de coincidencia y lo convertimos a puntos (hasta 50)
+    score += (matches / vacancy.mustHave.length) * 50; // Si el candidato tiene todas las habilidades must-have, obtiene los 50 puntos completos. Si tiene la mitad, obtiene 25 puntos, etc.
   }
 
   // 3. Bono por Perfil Completo (20%)
-  score += (profile.completitud / 100) * 20;
+  score += (profile.completitud / 100) * 20; // Si el perfil está 100% completo, obtiene los 20 puntos completos. Si está al 50%, obtiene 10 puntos, etc.
 
   return Math.round(score);
 }

@@ -3,8 +3,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Search, SlidersHorizontal, LogOut, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { JobCard } from "../../components/ui/JobCard";
 import { ApplicationCard } from "../../components/ui/ApplicationCard";
 import { Button } from "../../components/ui/button";
@@ -14,9 +13,9 @@ import { Card, CardContent } from "../../components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import LanguageSelector from "../../components/ui/LanguageSelector";
+import LogoutButton from "../../components/ui/LogoutButton";
 
 export default function ClientDashboard({ profile, vacantes, postulaciones }: any) {
-  const router = useRouter();
   const [busqueda, setBusqueda] = useState("");
   const [filtroModalidad, setFiltroModalidad] = useState<string>("todas");
   const [filtroSalarioMin, setFiltroSalarioMin] = useState<string>("");
@@ -55,14 +54,11 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
         <h2 className="text-2xl font-black text-black tracking-tight">ProfileManager</h2>
         <div className="flex items-center gap-3">
           <LanguageSelector />
-          <Link href={`/profile?id=${profile?.id}`} title="Ir a mi perfil"
+          <Link href="/profile" title="Ir a mi perfil"
             className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 hover:scale-105 hover:bg-gray-50 transition-all cursor-pointer">
             {profile?.firstName?.charAt(0) || "U"}
           </Link>
-          <Button variant="outline" onClick={() => router.push("/")}
-            className="h-9 border-black/20 text-black font-semibold rounded-xl hover:bg-white/50 gap-2">
-            <LogOut className="w-4 h-4" /> Cerrar Sesión
-          </Button>
+          <LogoutButton />
         </div>
       </header>
 
@@ -122,7 +118,8 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
                     </div>
                   </div>
                   <div className="mt-6 flex justify-end">
-                    <Button variant="outline" onClick={() => { setFiltroModalidad("todas"); setFiltroSalarioMin(""); }}
+                    <Button variant="outline"
+                      onClick={() => { setFiltroModalidad("todas"); setFiltroSalarioMin(""); }}
                       className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl">
                       Limpiar filtros
                     </Button>
@@ -205,7 +202,6 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
         </Tabs>
       </main>
 
-      {/* ─── FOOTER ─── */}
       <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
         className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8">
         © 2026 ProfileManager. Todos los derechos reservados.

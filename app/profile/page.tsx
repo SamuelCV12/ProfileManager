@@ -2,18 +2,23 @@
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
+import { redirect } from "next/navigation";
 import prisma from "../../lib/prisma";
 import ProfileForm from "./ProfileForm";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import LanguageSelector from "../../components/ui/LanguageSelector";
+import { getSessionUserId } from "../actions/auth";
 
-export default async function ProfilePage({ searchParams }: any) {
-  const profileId = searchParams?.id;
+export default async function ProfilePage() {
+  const userId = await getSessionUserId();
 
-  const profile = await prisma.profile.findFirst({
-    where: profileId ? { id: profileId } : undefined,
-    orderBy: { id: "asc" },
+  if (!userId) {
+    redirect("/");
+  }
+
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
     include: { user: true },
   });
 
@@ -27,8 +32,6 @@ export default async function ProfilePage({ searchParams }: any) {
 
   return (
     <div className="min-h-screen bg-white text-black flex flex-col">
-
-      {/* ─── HEADER ─── */}
       <header
         style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
         className="py-4 px-6 flex justify-between items-center shadow-sm"
@@ -53,7 +56,6 @@ export default async function ProfilePage({ searchParams }: any) {
         <ProfileForm profile={profile} />
       </main>
 
-      {/* ─── FOOTER ─── */}
       <footer
         style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
         className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8"
