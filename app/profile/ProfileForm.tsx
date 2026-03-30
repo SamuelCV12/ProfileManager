@@ -1,15 +1,16 @@
 // app/profile/ProfileForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile } from "../actions/profile";
+import { uploadAvatar } from "../actions/upload-avatar";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Save, User, Loader2, Plus, Trash2 } from "lucide-react";
+import { Save, User, Loader2, Plus, Trash2, Camera } from "lucide-react";
+import { toast } from "sonner";
 
-// ─── Tipos ───
 type EducationEntry = { degree: string; institution: string; year: string };
 type ExperienceEntry = { role: string; company: string; period: string; description: string };
 
@@ -45,6 +46,9 @@ function getCompletionMessage(pct: number) {
 export default function ProfileForm({ profile }: any) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatarUrl || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", desiredRole: "", description: "",
@@ -65,6 +69,7 @@ export default function ProfileForm({ profile }: any) {
         birthDate: profile.birthDate ? new Date(profile.birthDate).toISOString().split("T")[0] : "",
         phone: profile.phone || "",
       });
+      setAvatarPreview(profile.avatarUrl || null);
 
       const edu = profile.education || [];
       setEducationList(
@@ -83,6 +88,33 @@ export default function ProfileForm({ profile }: any) {
   }, [profile]);
 
   const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // ✅ Subir avatar al seleccionar
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Preview inmediato
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    // Subir al servidor
+    setIsUploadingAvatar(true);
+    const fd = new FormData();
+    fd.append("avatar", file);
+    const result = await uploadAvatar(fd);
+    setIsUploadingAvatar(false);
+
+    if (result.error) {
+      toast.error(result.error);
+      setAvatarPreview(profile?.avatarUrl || null);
+    } else {
+      toast.success("Foto subida. Guarda los cambios para confirmar.");
+      // Guardamos la URL en formData para que se envíe al guardar
+      setFormData(prev => ({ ...prev, avatarUrl: result.url } as any));
+    }
+  };
 
   const addEducation    = () => setEducationList([...educationList, { degree: "", institution: "", year: "" }]);
   const updateEducation = (i: number, field: keyof EducationEntry, val: string) => {
@@ -108,10 +140,10 @@ export default function ProfileForm({ profile }: any) {
     const result = await updateProfile(profile.id, dataToSave);
     setIsLoading(false);
     if (result.success) {
-      alert("¡Perfil actualizado con éxito!");
+      toast.success("¡Perfil actualizado con éxito!");
       router.refresh();
     } else {
-      alert("Error al actualizar el perfil.");
+      toast.error("Error al actualizar el perfil.");
     }
   };
 
@@ -131,18 +163,14 @@ export default function ProfileForm({ profile }: any) {
             <p className="text-sm text-gray-500">Actualiza tu información personal y profesional</p>
           </div>
         </div>
-
-        {/* Barra de progreso */}
         <div className="space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600 font-medium">Completado del perfil</span>
             <span className="font-bold text-black">{completitud}%</span>
           </div>
           <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#5FD3BC] to-[#7FFFD4] transition-all duration-1000 rounded-full"
-              style={{ width: `${completitud}%` }}
-            />
+            <div className="h-full bg-gradient-to-r from-[#5FD3BC] to-[#7FFFD4] transition-all duration-1000 rounded-full"
+              style={{ width: `${completitud}%` }} />
           </div>
           <p className="text-xs text-gray-400">{getCompletionMessage(completitud)}</p>
         </div>
@@ -152,15 +180,26 @@ export default function ProfileForm({ profile }: any) {
 
         {/* ─── FOTO DE PERFIL ─── */}
         <div className="flex flex-col items-center gap-2 pb-4 border-b border-gray-100">
-          <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-            <User className="w-10 h-10 text-gray-300" />
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-10 h-10 text-gray-300" />
+              )}
+            </div>
+            {/* Botón cámara sobre la foto */}
+            <button type="button" onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#5FD3BC] flex items-center justify-center shadow-md hover:bg-[#7FFFD4] transition-colors">
+              {isUploadingAvatar
+                ? <Loader2 className="w-4 h-4 text-white animate-spin" />
+                : <Camera className="w-4 h-4 text-white" />}
+            </button>
           </div>
           <p className="text-sm text-gray-500">Foto de Perfil</p>
-          <input
-            type="file"
-            accept="image/*"
-            className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border file:border-gray-200 file:text-xs file:bg-white file:text-gray-600 hover:file:bg-gray-50"
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+            onChange={handleAvatarChange} />
+          <p className="text-xs text-gray-400">JPG, PNG o WEBP · Máx 5MB</p>
         </div>
 
         {/* ─── INFORMACIÓN PERSONAL ─── */}
@@ -190,7 +229,6 @@ export default function ProfileForm({ profile }: any) {
             </div>
             <div className="space-y-1.5">
               <Label className="font-semibold text-black">Correo electrónico *</Label>
-              {/* ✅ readOnly en vez de disabled — se ve normal pero no se puede editar */}
               <Input value={profile?.user?.email || ""} readOnly
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>

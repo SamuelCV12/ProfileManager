@@ -21,8 +21,7 @@ export async function updateProfile(profileId: string, formData: any) {
     if (Array.isArray(formData.education)  && formData.education.length > 0)  score += 10;
     if (Array.isArray(formData.experience) && formData.experience.length > 0) score += 10;
 
-    // ─── FOTO (10 puntos) — se activa cuando avatarUrl esté configurado ───
-    // Por ahora leemos el avatarUrl existente en BD para no perder puntos si ya tenía foto
+    // ─── FOTO (10 puntos) ───
     const existingProfile = await prisma.profile.findUnique({ where: { id: profileId } });
     const avatarUrl = formData.avatarUrl || existingProfile?.avatarUrl || null;
     if (avatarUrl) score += 10;
@@ -37,6 +36,7 @@ export async function updateProfile(profileId: string, formData: any) {
         desiredRole: formData.desiredRole?.trim() || "",
         description: formData.description?.trim() || "",
         birthDate:   formData.birthDate ? new Date(formData.birthDate) : null,
+        phone:       formData.phone?.trim() || null, // ✅ campo agregado
         skills:      formData.skills,
         experience:  formData.experience,
         education:   formData.education,

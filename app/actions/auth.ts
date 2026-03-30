@@ -30,12 +30,13 @@ export async function loginUser(data: { email: string; password: string; tipoUsu
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 días
+      maxAge: 60 * 60 * 24 * 30, // 30 días
       path: "/",
     });
 
-    return { success: true };
+    console.log('✅ Login exitoso - Cookie "session_user_id" seteada para user:', user.id);
 
+    return { success: true };
   } catch (error) {
     console.error("Error en login:", error);
     return { error: "Error de conexión con la base de datos." };

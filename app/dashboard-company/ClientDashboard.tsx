@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Search, SlidersHorizontal, Briefcase, MapPin, Eye, Star, Plus, LogOut, Users, GraduationCap, Phone, Mail } from "lucide-react";
+import Link from "next/link";
+import { Search, SlidersHorizontal, Briefcase, MapPin, Eye, Star, Plus, Users, GraduationCap, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "../../components/ui/button";
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { createVacancy, deleteVacancy } from "../actions/vacancy";
 import { updateApplicationStatus } from "../actions/apply";
 import LanguageSelector from "../../components/ui/LanguageSelector";
+import LogoutButton from "../../components/ui/LogoutButton";
 
 function parseExperience(raw: string): string {
   if (!raw.includes(" | ")) return raw;
@@ -53,6 +54,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   RECHAZADO:   { label: "Rechazado",           color: "bg-red-50 text-red-700 border-red-200" },
 };
 
+import { useEffect } from "react";
+import { useSession } from "../../hooks/useSession";
+
 export default function ClientDashboard({ candidatosIniciales, cargosDisponiblesIniciales, postulacionesIniciales, companyId, companyName, companyInitials }: {
   candidatosIniciales: Candidato[];
   cargosDisponiblesIniciales: CargoDisponible[];
@@ -61,7 +65,13 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
   companyName: string;
   companyInitials: string;
 }) {
-  const router = useRouter();
+  const { isLoggedIn, loading } = useSession();
+
+  useEffect(() => {
+    if (!isLoggedIn && !loading) {
+      window.location.href = '/';
+    }
+  }, [isLoggedIn, loading]);
   const [candidatos] = useState<Candidato[]>(candidatosIniciales);
   const [cargos, setCargos] = useState<CargoDisponible[]>(cargosDisponiblesIniciales);
   const [postulaciones, setPostulaciones] = useState<Postulacion[]>(postulacionesIniciales);
@@ -98,7 +108,7 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
     toast.success("¡Cargo publicado exitosamente!");
     setMostrarModalVacante(false);
     setNuevaVacante({ title: "", description: "", modality: "Presencial", salaryRange: "", mustHave: "" });
-    router.refresh();
+    window.location.reload();
   };
 
   const handleEliminarVacante = async (vacancyId: string) => {
@@ -115,7 +125,6 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
     setPostulaciones(prev => prev.map(p => p.id === applicationId ? { ...p, status: nuevoEstado } : p));
   };
 
-  // Postulaciones del cargo seleccionado
   const postulacionesDeCargo = postulaciones.filter(p =>
     cargoPostulacionesId && cargos.find(c => c.id === cargoPostulacionesId)?.titulo === p.vacancyTitle
   );
@@ -131,12 +140,13 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
         <h2 className="text-2xl font-black text-black tracking-tight">ProfileManager</h2>
         <div className="flex items-center gap-3">
           <LanguageSelector />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100">
+          {/* ✅ Iniciales con link al perfil de empresa */}
+          <Link href="/profile-company" title="Perfil de empresa"
+            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 hover:scale-105 hover:bg-gray-50 transition-all cursor-pointer">
             {companyInitials}
-          </div>
-          <Button variant="outline" onClick={() => router.push("/")} className="h-9 border-black/20 text-black font-semibold rounded-xl hover:bg-white/50 gap-2">
-            <LogOut className="w-4 h-4" /> Cerrar Sesión
-          </Button>
+          </Link>
+          {/* ✅ LogoutButton que borra la cookie */}
+          <LogoutButton />
         </div>
       </header>
 
@@ -186,7 +196,6 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
           </div>
         </div>
 
-        {/* ─── TABS — solo 2 ─── */}
         <Tabs defaultValue="candidatos" className="w-full">
           <TabsList className="mb-6 bg-transparent gap-4 h-auto p-0">
             <TabsTrigger value="candidatos" className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#7FFFD4] data-[state=active]:text-black border border-gray-200 text-gray-500 transition-all font-bold">
@@ -246,8 +255,7 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
                       variant="outline" className="w-full border-gray-200 text-gray-700 rounded-xl h-10">
                       <Eye className="w-4 h-4 mr-2" /> Ver Perfil Completo
                     </Button>
-                    <button
-                      style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+                    <button style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                       className="w-full h-10 rounded-xl font-bold text-black hover:opacity-90 transition-opacity"
                       onClick={() => window.location.href = `mailto:${candidato.email}`}>
                       Contactar
@@ -303,9 +311,9 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <Button variant="outline"
-                      onClick={() => { setCargoPostulacionesId(cargo.id); }}
+                      onClick={() => setCargoPostulacionesId(cargoPostulacionesId === cargo.id ? null : cargo.id)}
                       className="border-gray-200 text-gray-700 rounded-xl h-10">
-                      Ver Postulaciones
+                      {cargoPostulacionesId === cargo.id ? "Ocultar" : "Ver Postulaciones"}
                     </Button>
                     <Button variant="outline" onClick={() => handleEliminarVacante(cargo.id)}
                       className="border-red-100 text-red-500 hover:bg-red-50 rounded-xl h-10">
@@ -313,38 +321,34 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
                     </Button>
                   </div>
 
-                  {/* Postulaciones inline del cargo */}
                   {cargoPostulacionesId === cargo.id && (
                     <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
                       <h4 className="font-bold text-black text-sm">Postulaciones a este cargo</h4>
                       {postulacionesDeCargo.length === 0 ? (
                         <p className="text-sm text-gray-400">No hay postulaciones aún.</p>
                       ) : (
-                        postulacionesDeCargo.map((p) => {
-                          const config = STATUS_CONFIG[p.status] || STATUS_CONFIG["POSTULADO"];
-                          return (
-                            <div key={p.id} className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-xl">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#7FFFD4]/50 flex items-center justify-center font-bold text-black text-xs">
-                                  {p.candidatoNombre.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-black text-sm">{p.candidatoNombre}</p>
-                                  <p className="text-xs text-gray-500">{p.candidatoEmail}</p>
-                                </div>
+                        postulacionesDeCargo.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-xl">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-[#7FFFD4]/50 flex items-center justify-center font-bold text-black text-xs">
+                                {p.candidatoNombre.split(" ").map(n => n[0]).join("").slice(0, 2)}
                               </div>
-                              <Select value={p.status} onValueChange={(val) => handleCambiarEstado(p.id, val)}>
-                                <SelectTrigger className="border-gray-200 h-8 bg-white text-black rounded-lg text-xs w-40"><SelectValue /></SelectTrigger>
-                                <SelectContent className="bg-white">
-                                  <SelectItem value="POSTULADO">Postulado</SelectItem>
-                                  <SelectItem value="EN_REVISION">En Revisión</SelectItem>
-                                  <SelectItem value="ENTREVISTA">Entrevista</SelectItem>
-                                  <SelectItem value="RECHAZADO">Rechazado</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div>
+                                <p className="font-semibold text-black text-sm">{p.candidatoNombre}</p>
+                                <p className="text-xs text-gray-500">{p.candidatoEmail}</p>
+                              </div>
                             </div>
-                          );
-                        })
+                            <Select value={p.status} onValueChange={(val) => handleCambiarEstado(p.id, val)}>
+                              <SelectTrigger className="border-gray-200 h-8 bg-white text-black rounded-lg text-xs w-40"><SelectValue /></SelectTrigger>
+                              <SelectContent className="bg-white">
+                                <SelectItem value="POSTULADO">Postulado</SelectItem>
+                                <SelectItem value="EN_REVISION">En Revisión</SelectItem>
+                                <SelectItem value="ENTREVISTA">Entrevista</SelectItem>
+                                <SelectItem value="RECHAZADO">Rechazado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ))
                       )}
                     </div>
                   )}
@@ -434,8 +438,7 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
                     <p className="text-sm font-bold text-black">${candidatoSeleccionado.salarioDeseado.toLocaleString("es-CO")} COP</p>
                   </div>
                 </div>
-                <button
-                  style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+                <button style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                   className="w-full h-11 rounded-xl font-bold text-black hover:opacity-90 transition-opacity"
                   onClick={() => window.location.href = `mailto:${candidatoSeleccionado.email}`}>
                   Contactar Candidato
@@ -491,10 +494,8 @@ export default function ClientDashboard({ candidatosIniciales, cargosDisponibles
       </Dialog>
 
       {/* ─── FOOTER ─── */}
-      <footer
-        style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
-        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8"
-      >
+      <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8">
         © 2026 ProfileManager. Todos los derechos reservados.
       </footer>
     </div>

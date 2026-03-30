@@ -14,14 +14,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import LanguageSelector from "../../components/ui/LanguageSelector";
 import LogoutButton from "../../components/ui/LogoutButton";
+import { useSession } from "../../hooks/useSession";
+import { useEffect } from "react";
 
 export default function ClientDashboard({ profile, vacantes, postulaciones }: any) {
+  const { isLoggedIn, loading } = useSession();
+  
   const [busqueda, setBusqueda] = useState("");
   const [filtroModalidad, setFiltroModalidad] = useState<string>("todas");
   const [filtroSalarioMin, setFiltroSalarioMin] = useState<string>("");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [ocultasIds, setOcultasIds] = useState<Set<string>>(new Set());
   const [mostrarOcultas, setMostrarOcultas] = useState(false);
+
+  useEffect(() => {
+    if (!isLoggedIn && !loading) {
+      window.location.href = '/';
+    }
+  }, [isLoggedIn, loading]);
 
   const toggleOcultar = (id: string) => {
     setOcultasIds((prev) => {

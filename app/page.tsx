@@ -11,6 +11,7 @@ import { Users, Briefcase, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { loginUser } from "@/app/actions/auth";
 import LanguageSelector from "@/components/ui/LanguageSelector";
+import { broadcast } from "@/lib/tab-sync";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -27,6 +28,9 @@ export default function LoginPage() {
     if (result.error) { toast.error(result.error); return; }
     if (result.success) {
       toast.success("¡Inicio de sesión exitoso!");
+      router.refresh(); // Revalida server data
+      await new Promise(r => setTimeout(r, 500)); // Delay para hydration
+      broadcast('LOGIN');
       router.push(tipoUsuario === "empresa" ? "/dashboard-company" : "/dashboard");
     }
   };

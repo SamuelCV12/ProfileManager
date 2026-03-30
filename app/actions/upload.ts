@@ -3,14 +3,13 @@
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
-import mammoth from "mammoth"; 
+import mammoth from "mammoth";
 
 export async function uploadResume(formData: FormData) {
   try {
     const file = formData.get("resume") as File;
     if (!file || file.size === 0) return { error: "Archivo no válido." };
 
-    // 1. Validar que sea estrictamente un archivo de Word (.docx)
     const allowedTypes = [
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ];
@@ -21,21 +20,19 @@ export async function uploadResume(formData: FormData) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    
-    const uploadDir = join(process.cwd(), "public", "uploads");
+
+    // ✅ CVs van a public/uploads/cvs/
+    const uploadDir = join(process.cwd(), "public", "uploads", "cvs");
     if (!existsSync(uploadDir)) await mkdir(uploadDir, { recursive: true });
 
     const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
     const filePath = join(uploadDir, fileName);
     await writeFile(filePath, buffer);
 
-    // 2. Extraer texto usando Mammoth (especialista en .docx)
     const result = await mammoth.extractRawText({ buffer });
     const fullText = result.value;
 
-    // 3. Procesamiento de datos para la US-01
     const lines = fullText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
-    
     const fullName = lines[0] || "Candidato";
     const nameParts = fullName.split(" ");
 
@@ -46,7 +43,7 @@ export async function uploadResume(formData: FormData) {
       experience: extractSection(fullText, ["EXPERIENCIA", "HISTORIAL LABORAL", "TRAYECTORIA"])
     };
 
-    return { success: true, url: `/uploads/${fileName}`, extractedData };
+    return { success: true, url: `/uploads/cvs/${fileName}`, extractedData };
 
   } catch (error) {
     console.error("Error en extracción:", error);
@@ -71,7 +68,7 @@ function extractSection(text: string, keywords: string[]): string[] {
     if (recording && line.trim().length > 5) {
       sectionData.push(line.trim());
     }
-    if (sectionData.length >= 3) break; 
+    if (sectionData.length >= 3) break;
   }
   return sectionData.length > 0 ? sectionData : ["Información no detectada automáticamente."];
 }
