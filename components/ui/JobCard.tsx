@@ -101,7 +101,7 @@ export function JobCard({ // Recibimos las props necesarias para mostrar la info
         </span>
         {modalidad && (
           <span className="flex items-center gap-1">
-            <Monitor className="w-4 h-4 text-[#5FD3BC]" /> {modalidad} • Tiempo completo
+            <Monitor className="w-4 h-4 text-[#5FD3BC]" /> {modalidad} 
           </span>
         )}
       </div>

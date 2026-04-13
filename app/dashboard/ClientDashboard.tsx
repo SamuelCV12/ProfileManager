@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown, User } from "lucide-react";
 import { JobCard } from "../../components/ui/JobCard";
 import { ApplicationCard } from "../../components/ui/ApplicationCard";
 import { Button } from "../../components/ui/button";
@@ -14,24 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import LanguageSelector from "../../components/ui/LanguageSelector";
 import LogoutButton from "../../components/ui/LogoutButton";
-import { useSession } from "../../hooks/useSession";
-import { useEffect } from "react";
 
 export default function ClientDashboard({ profile, vacantes, postulaciones }: any) {
-  const { isLoggedIn, loading } = useSession();
-  
   const [busqueda, setBusqueda] = useState("");
   const [filtroModalidad, setFiltroModalidad] = useState<string>("todas");
   const [filtroSalarioMin, setFiltroSalarioMin] = useState<string>("");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [ocultasIds, setOcultasIds] = useState<Set<string>>(new Set());
   const [mostrarOcultas, setMostrarOcultas] = useState(false);
-
-  useEffect(() => {
-    if (!isLoggedIn && !loading) {
-      window.location.href = '/';
-    }
-  }, [isLoggedIn, loading]);
 
   const toggleOcultar = (id: string) => {
     setOcultasIds((prev) => {
@@ -43,9 +33,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
 
   const vacantesFiltradas = vacantes.filter((job: any) => {
     if (ocultasIds.has(job.id)) return false;
-    if (busqueda &&
-      !job.title.toLowerCase().includes(busqueda.toLowerCase()) &&
-      !job.company.toLowerCase().includes(busqueda.toLowerCase())) return false;
+    if (busqueda && !job.title.toLowerCase().includes(busqueda.toLowerCase()) && !job.company.toLowerCase().includes(busqueda.toLowerCase())) return false;
     if (filtroModalidad !== "todas" && job.modalidad !== filtroModalidad) return false;
     if (filtroSalarioMin && job.salarioMin < parseInt(filtroSalarioMin)) return false;
     return true;
@@ -57,16 +45,17 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
     <div className="min-h-screen bg-white text-black flex flex-col">
 
       {/* ─── HEADER ─── */}
-      <header
-        style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
-        className="py-4 px-6 flex justify-between items-center shadow-sm"
-      >
+      <header style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+        className="py-4 px-6 flex justify-between items-center shadow-sm">
         <h2 className="text-2xl font-black text-black tracking-tight">ProfileManager</h2>
         <div className="flex items-center gap-3">
           <LanguageSelector />
+          {/* ✅ Avatar con foto si existe */}
           <Link href="/profile" title="Ir a mi perfil"
-            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 hover:scale-105 hover:bg-gray-50 transition-all cursor-pointer">
-            {profile?.firstName?.charAt(0) || "U"}
+            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 hover:scale-105 transition-all cursor-pointer overflow-hidden">
+            {profile?.avatarUrl
+              ? <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              : <span className="text-sm font-bold">{profile?.firstName?.charAt(0) || "U"}</span>}
           </Link>
           <LogoutButton />
         </div>
@@ -75,19 +64,34 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
       {/* ─── MAIN ─── */}
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8">
         <div className="mb-10">
-          <h1 className="text-4xl font-bold text-black mb-2">
-            Bienvenido de nuevo{profile?.firstName ? `, ${profile.firstName}` : ""}
-          </h1>
-          <p className="text-gray-600 mb-6 font-medium">Encuentra tu próxima oportunidad profesional</p>
+          {/* ✅ SECCIÓN BIENVENIDA REESTRUCTURADA */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
+            
+            {/* Texto de Bienvenida (Izquierda) */}
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-black leading-tight">
+                Bienvenido de nuevo{profile?.firstName ? `, ${profile.firstName}` : ""}
+              </h1>
+              <p className="text-gray-600 font-medium text-lg mt-1">Encuentra tu próxima oportunidad profesional</p>
+            </div>
 
-          <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 w-fit mb-8">
+            {/* ✅ Foto de Perfil Grande (Derecha - Solo si existe) */}
+            {profile?.avatarUrl ? (
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl shrink-0 self-center md:self-end bg-gray-50 flex items-center justify-center">
+                <img src={profile.avatarUrl} alt="Foto de perfil grande" className="w-full h-full object-cover" />
+              </div>
+            ) : null}
+          </div>
+
+          {/* Barra de progreso */}
+          <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 w-fit my-6">
             <p className="text-sm font-medium text-gray-700">Tu perfil está al {profile?.completitud || 0}%</p>
             <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-[#5FD3BC] transition-all duration-1000"
-                style={{ width: `${profile?.completitud || 0}%` }} />
+              <div className="h-full bg-[#5FD3BC] transition-all duration-1000" style={{ width: `${profile?.completitud || 0}%` }} />
             </div>
           </div>
 
+          {/* Buscador */}
           <div className="space-y-4">
             <div className="flex gap-3">
               <div className="relative flex-1">
@@ -103,7 +107,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
             </div>
 
             {mostrarFiltros && (
-              <Card className="border-gray-100 bg-white rounded-2xl shadow-sm">
+              <Card className="border-gray-100 bg-white rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-200">
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -128,8 +132,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
                     </div>
                   </div>
                   <div className="mt-6 flex justify-end">
-                    <Button variant="outline"
-                      onClick={() => { setFiltroModalidad("todas"); setFiltroSalarioMin(""); }}
+                    <Button variant="outline" onClick={() => { setFiltroModalidad("todas"); setFiltroSalarioMin(""); }}
                       className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl">
                       Limpiar filtros
                     </Button>
@@ -140,7 +143,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
           </div>
         </div>
 
-        {/* ─── TABS ─── */}
+        {/* TABS */}
         <Tabs defaultValue="vacantes" className="w-full">
           <TabsList className="mb-6 bg-transparent gap-4 h-auto p-0">
             <TabsTrigger value="vacantes"
@@ -213,7 +216,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
       </main>
 
       <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
-        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8">
+        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8 border-t border-black/5">
         © 2026 ProfileManager. Todos los derechos reservados.
       </footer>
     </div>

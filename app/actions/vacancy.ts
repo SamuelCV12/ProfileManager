@@ -1,16 +1,3 @@
-/**
- *  Vacancy Actions
- * Este archivo contiene las funciones para crear y eliminar vacantes, utilizando Prisma para interactuar con la base de datos. Estas funciones se ejecutan en el servidor y revalidan la página del dashboard de la empresa después de cada operación.
- * 
- * Funciones: 
- * - createVacancy: Crea una nueva vacante con los datos proporcionados.
- * - deleteVacancy: Elimina una vacante existente por su ID.
- * Ambas funciones manejan errores y devuelven un objeto indicando el éxito o el error de la operación.
- * 
- * Nota: Asegúrate de que el modelo Vacancy en tu esquema de Prisma tenga los campos necesarios para que estas funciones funcionen correctamente.
- */
-
-
 "use server";
 
 import prisma from "../../lib/prisma";
@@ -33,6 +20,7 @@ export async function createVacancy(data: {
         modality: data.modality,
         salaryRange: data.salaryRange,
         mustHave: data.mustHave,
+        estado: "Activo",
       }
     });
     revalidatePath("/dashboard-company");
@@ -40,6 +28,34 @@ export async function createVacancy(data: {
   } catch (error) {
     console.error("Error creando vacante:", error);
     return { error: "No se pudo crear la vacante." };
+  }
+}
+
+export async function updateVacancy(vacancyId: string, data: {
+  title?: string;
+  description?: string;
+  modality?: string;
+  salaryRange?: string;
+  mustHave?: string[];
+  estado?: "Activo" | "Pausado";
+}) {
+  try {
+    await prisma.vacancy.update({
+      where: { id: vacancyId },
+      data: {
+        title: data.title,
+        description: data.description,
+        modality: data.modality,
+        salaryRange: data.salaryRange,
+        mustHave: data.mustHave,
+        estado: data.estado,
+      }
+    });
+    revalidatePath("/dashboard-company");
+    return { success: true };
+  } catch (error) {
+    console.error("Error actualizando vacante:", error);
+    return { error: "No se pudo actualizar la vacante." };
   }
 }
 
