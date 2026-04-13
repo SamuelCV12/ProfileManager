@@ -51,7 +51,8 @@ export default async function DashboardCompanyPage() {
     salaryRange: v.salaryRange,
     ubicacion: empresaActiva.location,
     modalidad: v.modality as "Remoto" | "Presencial" | "Híbrido",
-    estado: v.isActive ? "Activo" as const : "Pausado" as const,
+    // Corregido: Ahora envía isActive como booleano para que ClientDashboard lo reconozca
+    isActive: v.isActive, 
     candidatosPostulados: v.applications.length,
     mustHave: v.mustHave,
   }));

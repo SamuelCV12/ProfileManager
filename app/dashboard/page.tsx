@@ -23,45 +23,53 @@ export default async function DashboardPage() {
     return <div className="p-8 text-center text-gray-500 font-medium">Perfil no encontrado.</div>;
   }
 
+  // Obtenemos todas las vacantes (incluyendo inactivas para las postulaciones previas)
   const allVacancies = await prisma.vacancy.findMany({
-    where: { isActive: true },
     include: { company: true }
   });
 
   const myApplications = await prisma.application.findMany({
     where: { profileId: profile.id },
-    include: { vacancy: { include: { company: true } } }
+    include: { 
+      vacancy: { 
+        include: { company: true } 
+      } 
+    }
   });
 
   const appliedVacancyIds = myApplications.map(app => app.vacancyId);
 
-  const recommendedJobs = allVacancies.map(v => {
-    let salarioMin = 0;
-    if (v.salaryRange) {
-      const match = v.salaryRange.match(/(\d+(\.\d+)?)/);
-      if (match) {
-        salarioMin = parseFloat(match[0]);
-        if (v.salaryRange.toUpperCase().includes("M")) salarioMin *= 1000000;
+  // Filtramos solo las activas para la pestaña de "Recomendados"
+  const recommendedJobs = allVacancies
+    .filter(v => v.isActive) 
+    .map(v => {
+      let salarioMin = 0;
+      if (v.salaryRange) {
+        const match = v.salaryRange.match(/(\d+(\.\d+)?)/);
+        if (match) {
+          salarioMin = parseFloat(match[0]);
+          if (v.salaryRange.toUpperCase().includes("M")) salarioMin *= 1000000;
+        }
       }
-    }
 
-    const matchScore = calculateMatchScore(profile, v);
+      const matchScore = calculateMatchScore(profile, v);
 
-    return {
-      id: v.id,
-      title: v.title,
-      company: v.company.name,
-      location: v.company.location,
-      modalidad: v.modality,
-      salarioMin,
-      salaryRange: v.salaryRange,
-      description: v.description,
-      matchScore,
-      mustHave: v.mustHave,
-      isApplied: appliedVacancyIds.includes(v.id),
-      isUrgent: matchScore >= 80,
-    };
-  }).sort((a, b) => b.matchScore - a.matchScore);
+      return {
+        id: v.id,
+        title: v.title,
+        company: v.company.name,
+        location: v.company.location,
+        modalidad: v.modality,
+        salarioMin,
+        salaryRange: v.salaryRange,
+        description: v.description,
+        matchScore,
+        mustHave: v.mustHave,
+        isApplied: appliedVacancyIds.includes(v.id),
+        isUrgent: matchScore >= 80,
+        isActive: v.isActive, // Crucial para la lógica visual
+      };
+    }).sort((a, b) => b.matchScore - a.matchScore);
 
   return (
     <ClientDashboard

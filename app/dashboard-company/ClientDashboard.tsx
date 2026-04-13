@@ -11,25 +11,28 @@ import { Label }    from "../../components/ui/label";
 import { Card }     from "../../components/ui/card";
 import { Badge }    from "../../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { createVacancy, deleteVacancy, updateVacancy } from "../actions/vacancy";
 import LanguageSelector from "../../components/ui/LanguageSelector";
 import LogoutButton     from "../../components/ui/LogoutButton";
 import { useSession }   from "../../hooks/useSession";
 
+// Interfaz corregida para coincidir con el schema de Prisma
 interface CargoDisponible {
-  id: string; titulo: string; descripcion: string; salario: number;
-  salaryRange: string | null; ubicacion: string;
-  modalidad: "Remoto" | "Presencial" | "Híbrido";
-  estado: "Activo" | "Pausado"; candidatosPostulados: number; mustHave: string[];
+  id: string;
+  titulo: string;
+  descripcion: string;
+  salaryRange: string | null;
+  ubicacion: string;
+  modalidad: string;
+  isActive: boolean; // Cambiado de 'estado' (string) a 'isActive' (boolean)
+  candidatosPostulados: number;
+  mustHave: string[];
 }
 
 export default function ClientDashboard({
-  candidatosIniciales,
   cargosDisponiblesIniciales,
-  postulacionesIniciales,
   companyId,
-  companyName,
   companyInitials,
 }: {
   candidatosIniciales: any[];
@@ -54,7 +57,11 @@ export default function ClientDashboard({
   const [idEdicion, setIdEdicion] = useState<string | null>(null);
 
   const [nuevaVacante, setNuevaVacante] = useState({
-    title: "", description: "", modality: "Presencial" as any, salaryRange: "", mustHave: "",
+    title: "", 
+    description: "", 
+    modality: "Presencial", 
+    salaryRange: "", 
+    mustHave: "",
   });
   const [loadingVacante, setLoadingVacante] = useState(false);
 
@@ -92,7 +99,11 @@ export default function ClientDashboard({
       return;
     }
     setLoadingVacante(true);
-    const mustHaveArray = nuevaVacante.mustHave.split(",").map(s => s.trim()).filter(s => s.length > 0);
+    
+    const mustHaveArray = nuevaVacante.mustHave
+      .split(",")
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
     
     const payload = {
       title: nuevaVacante.title,
@@ -102,33 +113,46 @@ export default function ClientDashboard({
       mustHave: mustHaveArray,
     };
 
-    const result = modoEdicion && idEdicion
-      ? await updateVacancy(idEdicion, payload)
-      : await createVacancy({ ...payload, companyId });
+    try {
+      const result = modoEdicion && idEdicion
+        ? await updateVacancy(idEdicion, payload)
+        : await createVacancy({ ...payload, companyId });
 
-    setLoadingVacante(false);
-    // @ts-ignore
-    if (result.error) { toast.error(result.error); return; }
-    
-    toast.success(modoEdicion ? "Cargo actualizado." : "¡Cargo publicado!");
-    setMostrarModalVacante(false);
-    window.location.reload();
+      // @ts-ignore
+      if (result?.error) { 
+        toast.error(result.error); 
+      } else {
+        toast.success(modoEdicion ? "Cargo actualizado." : "¡Cargo publicado!");
+        setMostrarModalVacante(false);
+        window.location.reload(); // Recarga para sincronizar con Server Actions
+      }
+    } catch (error) {
+      toast.error("Error de conexión con el servidor.");
+    } finally {
+      setLoadingVacante(false);
+    }
   };
 
-  const handleCambiarEstado = async (id: string, estadoActual: string) => {
-    const nuevoEstado = estadoActual === "Activo" ? "Pausado" : "Activo";
-    const result = await updateVacancy(id, { estado: nuevoEstado });
-    // @ts-ignore
-    if (result.error) { toast.error(result.error); return; }
-    toast.info(`Estado cambiado a ${nuevoEstado}`);
+  const handleCambiarEstado = async (id: string, isActiveActual: boolean) => {
+    const nuevoEstado = !isActiveActual;
+    const result = await updateVacancy(id, { isActive: nuevoEstado });
+    
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    
+    toast.info(nuevoEstado ? "Vacante activada" : "Vacante pausada");
     window.location.reload();
   };
 
   const handleEliminarVacante = async (vacancyId: string) => {
     if (!confirm("¿Eliminar este cargo permanentemente?")) return;
     const result = await deleteVacancy(vacancyId);
-    // @ts-ignore
-    if (result.error) { toast.error(result.error); return; }
+    if (result.error) { 
+      toast.error(result.error); 
+      return; 
+    }
     toast.success("Cargo eliminado.");
     setCargos(prev => prev.filter(c => c.id !== vacancyId));
   };
@@ -167,16 +191,16 @@ export default function ClientDashboard({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-xl font-bold truncate">{cargo.titulo}</h3>
-                    <Badge className={cargo.estado === "Activo" ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-600"}>
-                      {cargo.estado}
+                    <Badge className={cargo.isActive ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-600"}>
+                      {cargo.isActive ? "Activo" : "Pausado"}
                     </Badge>
                   </div>
                   <p className="text-gray-500 text-sm line-clamp-2">{cargo.descripcion}</p>
                 </div>
                 <div className="flex gap-1 ml-2">
                   <Button variant="ghost" size="icon" onClick={() => abrirEditar(cargo)} className="text-blue-500 h-8 w-8"><Edit2 className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleCambiarEstado(cargo.id, cargo.estado)} className="text-orange-500 h-8 w-8">
-                    {cargo.estado === "Activo" ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                  <Button variant="ghost" size="icon" onClick={() => handleCambiarEstado(cargo.id, cargo.isActive)} className="text-orange-500 h-8 w-8">
+                    {cargo.isActive ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleEliminarVacante(cargo.id)} className="text-red-500 h-8 w-8"><Trash2 className="w-4 h-4" /></Button>
                 </div>

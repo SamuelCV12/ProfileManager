@@ -20,7 +20,7 @@ export async function createVacancy(data: {
         modality: data.modality,
         salaryRange: data.salaryRange,
         mustHave: data.mustHave,
-        estado: "Activo",
+        isActive: true, // Forzamos que siempre nazca activa por defecto
       }
     });
     revalidatePath("/dashboard-company");
@@ -37,7 +37,7 @@ export async function updateVacancy(vacancyId: string, data: {
   modality?: string;
   salaryRange?: string;
   mustHave?: string[];
-  estado?: "Activo" | "Pausado";
+  isActive?: boolean;
 }) {
   try {
     await prisma.vacancy.update({
@@ -48,7 +48,7 @@ export async function updateVacancy(vacancyId: string, data: {
         modality: data.modality,
         salaryRange: data.salaryRange,
         mustHave: data.mustHave,
-        estado: data.estado,
+        isActive: data.isActive, // El toggle booleano
       }
     });
     revalidatePath("/dashboard-company");
