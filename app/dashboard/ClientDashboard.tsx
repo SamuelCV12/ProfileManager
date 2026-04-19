@@ -1,9 +1,8 @@
-// app/dashboard/ClientDashboard.tsx
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Search, SlidersHorizontal, ChevronDown, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { JobCard } from "../../components/ui/JobCard";
 import { ApplicationCard } from "../../components/ui/ApplicationCard";
 import { Button } from "../../components/ui/button";
@@ -15,13 +14,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import LanguageSelector from "../../components/ui/LanguageSelector";
 import LogoutButton from "../../components/ui/LogoutButton";
 
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
 export default function ClientDashboard({ profile, vacantes, postulaciones }: any) {
   const [busqueda, setBusqueda] = useState("");
   const [filtroModalidad, setFiltroModalidad] = useState<string>("todas");
   const [filtroSalarioMin, setFiltroSalarioMin] = useState<string>("");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [ocultasIds, setOcultasIds] = useState<Set<string>>(new Set());
-  const [mostrarOcultas, setMostrarOcultas] = useState(false);
+
+  // --- Lógica de Auto-Postulación (100% Match) ---
+  useEffect(() => {
+    const autoPostular = async () => {
+      const perfectMatches = vacantes.filter(
+        (job: any) => job.matchScore === 100 && !job.isApplied
+      );
+
+      for (const job of perfectMatches) {
+        console.log(`Auto-postulando a: ${job.title} en ${job.company}`);
+        // Aquí llamarías a tu API de postulación
+        // await fetch('/api/postulate', { method: 'POST', body: JSON.stringify({ jobId: job.id, profileId: profile.id }) });
+      }
+    };
+
+    if (vacantes.length > 0) autoPostular();
+  }, [vacantes, profile?.id]);
 
   const toggleOcultar = (id: string) => {
     setOcultasIds((prev) => {
@@ -31,28 +54,29 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
     });
   };
 
+  // --- Lógica de Filtrado (Mínimo 70% de Match) ---
   const vacantesFiltradas = vacantes.filter((job: any) => {
+    // 1. Filtro base de compatibilidad >= 70%
+    if (job.matchScore < 70) return false;
+    
+    // 2. Otros filtros existentes
     if (ocultasIds.has(job.id)) return false;
     if (busqueda && !job.title.toLowerCase().includes(busqueda.toLowerCase()) && !job.company.toLowerCase().includes(busqueda.toLowerCase())) return false;
     if (filtroModalidad !== "todas" && job.modalidad !== filtroModalidad) return false;
     if (filtroSalarioMin && job.salarioMin < parseInt(filtroSalarioMin)) return false;
+    
     return true;
   });
 
-  const vacantesOcultas = vacantes.filter((job: any) => ocultasIds.has(job.id));
-
   return (
     <div className="min-h-screen bg-white text-black flex flex-col">
-
-      {/* ─── HEADER ─── */}
       <header style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
         className="py-4 px-6 flex justify-between items-center shadow-sm">
         <h2 className="text-2xl font-black text-black tracking-tight">ProfileManager</h2>
         <div className="flex items-center gap-3">
           <LanguageSelector />
-          {/* ✅ Avatar con foto si existe */}
-          <Link href="/profile" title="Ir a mi perfil"
-            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 hover:scale-105 transition-all cursor-pointer overflow-hidden">
+          <Link href="/profile" 
+            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 hover:scale-105 transition-all overflow-hidden">
             {profile?.avatarUrl
               ? <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               : <span className="text-sm font-bold">{profile?.firstName?.charAt(0) || "U"}</span>}
@@ -61,44 +85,26 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
         </div>
       </header>
 
-      {/* ─── MAIN ─── */}
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8">
         <div className="mb-10">
-          {/* ✅ SECCIÓN BIENVENIDA REESTRUCTURADA */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
-            
-            {/* Texto de Bienvenida (Izquierda) */}
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-black leading-tight">
                 Bienvenido de nuevo{profile?.firstName ? `, ${profile.firstName}` : ""}
               </h1>
-              <p className="text-gray-600 font-medium text-lg mt-1">Encuentra tu próxima oportunidad profesional</p>
-            </div>
-
-            {/* ✅ Foto de Perfil Grande (Derecha - Solo si existe) */}
-            {profile?.avatarUrl ? (
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl shrink-0 self-center md:self-end bg-gray-50 flex items-center justify-center">
-                <img src={profile.avatarUrl} alt="Foto de perfil grande" className="w-full h-full object-cover" />
-              </div>
-            ) : null}
-          </div>
-
-          {/* Barra de progreso */}
-          <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 w-fit my-6">
-            <p className="text-sm font-medium text-gray-700">Tu perfil está al {profile?.completitud || 0}%</p>
-            <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-[#5FD3BC] transition-all duration-1000" style={{ width: `${profile?.completitud || 0}%` }} />
+              <p className="text-gray-600 font-medium text-lg mt-1">
+                Mostrando las mejores vacantes para tu perfil (70%+ compatibilidad)
+              </p>
             </div>
           </div>
 
-          {/* Buscador */}
-          <div className="space-y-4">
+          <div className="space-y-4 mt-6">
             <div className="flex gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input type="text" placeholder="Buscar por puesto o empresa..." value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  className="w-full pl-12 h-12 bg-gray-50 border-gray-200 rounded-xl text-black focus:border-[#5FD3BC]" />
+                  className="w-full pl-12 h-12 bg-gray-50 border-gray-200 rounded-xl text-black" />
               </div>
               <Button variant="outline" onClick={() => setMostrarFiltros(!mostrarFiltros)}
                 className="h-12 border-gray-200 text-gray-700 rounded-xl px-6 font-semibold">
@@ -107,7 +113,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
             </div>
 
             {mostrarFiltros && (
-              <Card className="border-gray-100 bg-white rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-200">
+              <Card className="border-gray-100 bg-white rounded-2xl shadow-sm animate-in fade-in duration-200">
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -131,23 +137,16 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
                         className="border-gray-200 h-11 bg-gray-50 text-black rounded-xl" />
                     </div>
                   </div>
-                  <div className="mt-6 flex justify-end">
-                    <Button variant="outline" onClick={() => { setFiltroModalidad("todas"); setFiltroSalarioMin(""); }}
-                      className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl">
-                      Limpiar filtros
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             )}
           </div>
         </div>
 
-        {/* TABS */}
         <Tabs defaultValue="vacantes" className="w-full">
           <TabsList className="mb-6 bg-transparent gap-4 h-auto p-0">
             <TabsTrigger value="vacantes"
-              className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#7FFFD4] data-[state=active]:text-black border border-gray-200 text-gray-500 transition-all font-bold">
+              className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#7FFFD4] data-[state=active]:text-black border border-gray-200 text-gray-500 font-bold">
               Vacantes Recomendadas ({vacantesFiltradas.length})
             </TabsTrigger>
             <TabsTrigger value="postulaciones"
@@ -162,36 +161,15 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
                 <JobCard key={job.id} id={job.id} profileId={profile?.id}
                   title={job.title} company={job.company} location={job.location}
                   match={job.matchScore} tags={job.mustHave} isApplied={job.isApplied}
-                  salaryRange={job.salaryRange} description={job.description}
-                  modalidad={job.modalidad} isUrgent={job.isUrgent}
+                  salaryRange={formatCurrency(job.salarioMin)}
+                  description={job.description}
+                  modalidad={job.modalidad} isUrgent={job.isUrgent} isActive={job.isActive}
                   onHide={() => toggleOcultar(job.id)} />
               ))}
-              {vacantesFiltradas.length === 0 && (
-                <div className="col-span-full text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <p className="text-gray-500 font-medium">No se encontraron vacantes con esos filtros.</p>
-                </div>
-              )}
             </div>
-
-            {vacantesOcultas.length > 0 && (
-              <div className="mt-10">
-                <button onClick={() => setMostrarOcultas((v) => !v)}
-                  className="flex items-center gap-2 text-gray-500 font-semibold text-sm hover:text-black transition-colors mb-4">
-                  <ChevronDown className={`w-4 h-4 transition-transform ${mostrarOcultas ? "rotate-180" : ""}`} />
-                  Vacantes Ocultas ({vacantesOcultas.length})
-                </button>
-                {mostrarOcultas && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
-                    {vacantesOcultas.map((job: any) => (
-                      <JobCard key={job.id} id={job.id} profileId={profile?.id}
-                        title={job.title} company={job.company} location={job.location}
-                        match={job.matchScore} tags={job.mustHave} isApplied={job.isApplied}
-                        salaryRange={job.salaryRange} description={job.description}
-                        modalidad={job.modalidad} isUrgent={job.isUrgent}
-                        isHidden={true} onHide={() => toggleOcultar(job.id)} />
-                    ))}
-                  </div>
-                )}
+            {vacantesFiltradas.length === 0 && (
+              <div className="text-center py-20 text-gray-400">
+                No hay vacantes con más del 70% de compatibilidad en este momento.
               </div>
             )}
           </TabsContent>
@@ -202,21 +180,18 @@ export default function ClientDashboard({ profile, vacantes, postulaciones }: an
                 <ApplicationCard key={app.id}
                   title={app.vacancy.title} company={app.vacancy.company.name}
                   location={app.vacancy.company.location} modalidad={app.vacancy.modality}
-                  salaryRange={app.vacancy.salaryRange} status={app.status}
+                  salaryRange={formatCurrency(app.vacancy.salaryRange)}
+                  status={app.status}
+                  isActive={app.vacancy.isActive}
                   appliedAt={app.appliedAt} interviewDate={app.interviewDate} />
               ))}
-              {postulaciones.length === 0 && (
-                <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                  <p className="text-gray-500 font-medium">Aún no te has postulado a ninguna vacante.</p>
-                </div>
-              )}
             </div>
           </TabsContent>
         </Tabs>
       </main>
 
       <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
-        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8 border-t border-black/5">
+        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-auto">
         © 2026 ProfileManager. Todos los derechos reservados.
       </footer>
     </div>

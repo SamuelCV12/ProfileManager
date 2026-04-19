@@ -8,7 +8,7 @@ export async function createVacancy(data: {
   title: string;
   description: string;
   modality: string;
-  salaryRange: string;
+  salaryRange: number | null; // Cambiado a number para Prisma Int
   mustHave: string[];
 }) {
   try {
@@ -20,7 +20,7 @@ export async function createVacancy(data: {
         modality: data.modality,
         salaryRange: data.salaryRange,
         mustHave: data.mustHave,
-        isActive: true, // Forzamos que siempre nazca activa por defecto
+        isActive: true,
       }
     });
     revalidatePath("/dashboard-company");
@@ -35,7 +35,7 @@ export async function updateVacancy(vacancyId: string, data: {
   title?: string;
   description?: string;
   modality?: string;
-  salaryRange?: string;
+  salaryRange?: number | null; // Cambiado a number para Prisma Int
   mustHave?: string[];
   isActive?: boolean;
 }) {
@@ -48,7 +48,7 @@ export async function updateVacancy(vacancyId: string, data: {
         modality: data.modality,
         salaryRange: data.salaryRange,
         mustHave: data.mustHave,
-        isActive: data.isActive, // El toggle booleano
+        isActive: data.isActive,
       }
     });
     revalidatePath("/dashboard-company");

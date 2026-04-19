@@ -23,7 +23,7 @@ export default async function DashboardPage() {
     return <div className="p-8 text-center text-gray-500 font-medium">Perfil no encontrado.</div>;
   }
 
-  // Obtenemos todas las vacantes (incluyendo inactivas para las postulaciones previas)
+  // Obtenemos todas las vacantes
   const allVacancies = await prisma.vacancy.findMany({
     include: { company: true }
   });
@@ -43,14 +43,8 @@ export default async function DashboardPage() {
   const recommendedJobs = allVacancies
     .filter(v => v.isActive) 
     .map(v => {
-      let salarioMin = 0;
-      if (v.salaryRange) {
-        const match = v.salaryRange.match(/(\d+(\.\d+)?)/);
-        if (match) {
-          salarioMin = parseFloat(match[0]);
-          if (v.salaryRange.toUpperCase().includes("M")) salarioMin *= 1000000;
-        }
-      }
+      // ✅ Lógica simplificada: salaryRange ya es un Int
+      const salarioMin = v.salaryRange || 0;
 
       const matchScore = calculateMatchScore(profile, v);
 
@@ -60,14 +54,14 @@ export default async function DashboardPage() {
         company: v.company.name,
         location: v.company.location,
         modalidad: v.modality,
-        salarioMin,
+        salarioMin, // Pasamos el número directamente
         salaryRange: v.salaryRange,
         description: v.description,
         matchScore,
         mustHave: v.mustHave,
         isApplied: appliedVacancyIds.includes(v.id),
         isUrgent: matchScore >= 80,
-        isActive: v.isActive, // Crucial para la lógica visual
+        isActive: v.isActive,
       };
     }).sort((a, b) => b.matchScore - a.matchScore);
 

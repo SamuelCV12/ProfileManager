@@ -1,4 +1,3 @@
-// app/dashboard-company/page.tsx
 import { redirect } from "next/navigation";
 import prisma from "../../lib/prisma";
 import ClientDashboard from "./ClientDashboard";
@@ -47,11 +46,9 @@ export default async function DashboardCompanyPage() {
     id: v.id,
     titulo: v.title,
     descripcion: v.description,
-    salario: 5000000,
-    salaryRange: v.salaryRange,
+    salaryRange: v.salaryRange, 
     ubicacion: empresaActiva.location,
     modalidad: v.modality as "Remoto" | "Presencial" | "Híbrido",
-    // Corregido: Ahora envía isActive como booleano para que ClientDashboard lo reconozca
     isActive: v.isActive, 
     candidatosPostulados: v.applications.length,
     mustHave: v.mustHave,

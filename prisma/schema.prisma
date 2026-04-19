@@ -61,7 +61,7 @@ model Vacancy {
   title        String
   description  String
   modality     String        @default("Presencial")
-  salaryRange  String?
+  salaryRange  Int?
   mustHave     String[]
   niceToHave   String[]
   isActive     Boolean       @default(true)

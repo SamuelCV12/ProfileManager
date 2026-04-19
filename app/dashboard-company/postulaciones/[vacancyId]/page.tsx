@@ -1,29 +1,46 @@
 import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma"; // Asegúrate de que el alias @ apunte a tu carpeta raíz o usa la ruta relativa
+import prisma from "@/lib/prisma";
 import { getSessionUserId } from "../../../actions/auth";
 import PostulacionesClient from "./PostulacionesClient";
 
 export const dynamic = "force-dynamic";
 
-// Definimos la interfaz para que coincida con el comportamiento asíncrono de Next.js
 interface Props {
   params: Promise<{ vacancyId: string }>;
 }
 
+/**
+ * Función robusta para formatear el salario
+ * Maneja tipos numéricos de Prisma y strings manuales
+ */
+const formatSalary = (salary: any) => {
+  if (salary === null || salary === undefined || salary === "N/A" || salary === "") {
+    return "No definido";
+  }
+  
+  // Convertimos a string por seguridad antes del replace
+  const salaryStr = String(salary);
+  const numericValue = parseInt(salaryStr.replace(/\D/g, ""), 10);
+  
+  if (isNaN(numericValue)) return salaryStr;
+
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(numericValue);
+};
+
 export default async function PostulacionesPage({ params }: Props) {
-  // 1. Resolvemos los params antes de usarlos
   const resolvedParams = await params;
   const vacancyId = resolvedParams.vacancyId;
 
-  // 2. Verificación de sesión
   const userId = await getSessionUserId();
   if (!userId) redirect("/");
 
-  // 3. Verificación de empresa vinculada al usuario
   const empresa = await prisma.company.findUnique({ where: { userId } });
   if (!empresa) redirect("/");
 
-  // 4. Búsqueda de la vacante con validación de ID
   if (!vacancyId) redirect("/dashboard-company");
 
   const vacancy = await prisma.vacancy.findUnique({
@@ -31,12 +48,10 @@ export default async function PostulacionesPage({ params }: Props) {
     include: { company: true },
   });
 
-  // 5. Validar que la vacante exista y pertenezca a la empresa del usuario
   if (!vacancy || vacancy.companyId !== empresa.id) {
     redirect("/dashboard-company");
   }
 
-  // 6. Obtener las postulaciones vinculadas
   const applicationsDb = await prisma.application.findMany({
     where: { vacancyId: vacancyId },
     include: {
@@ -47,7 +62,6 @@ export default async function PostulacionesPage({ params }: Props) {
     orderBy: { appliedAt: "desc" },
   });
 
-  // 7. Mapeo de datos para el cliente
   const postulaciones = applicationsDb.map((a) => ({
     id: a.id,
     status: a.status,
@@ -67,7 +81,6 @@ export default async function PostulacionesPage({ params }: Props) {
     },
   }));
 
-  // 8. Cálculo de iniciales de la empresa
   const initials = empresa.name
     .split(" ")
     .map((n: string) => n[0])
@@ -81,7 +94,7 @@ export default async function PostulacionesPage({ params }: Props) {
       vacancyTitle={vacancy.title}
       vacancyDescription={vacancy.description}
       vacancyModalidad={vacancy.modality}
-      vacancySalaryRange={vacancy.salaryRange || "No definido"}
+      vacancySalaryRange={formatSalary(vacancy.salaryRange)}
       vacancyMustHave={vacancy.mustHave}
       companyInitials={initials}
       postulaciones={postulaciones}
