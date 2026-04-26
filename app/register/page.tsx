@@ -6,41 +6,48 @@ import { useRouter } from "next/navigation";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Upload, Plus, User, FileText, Loader2, ArrowLeft, Trash2 } from "lucide-react";
+import { Plus, User, FileText, Loader2, ArrowLeft, Trash2, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { registerUser } from "../actions/register";
-import { uploadResume } from "../actions/upload";
 import LanguageSelector from "../../components/ui/LanguageSelector";
 
-type EducationEntry = { degree: string; institution: string; year: string };
+type EducationEntry  = { degree: string; institution: string; year: string };
 type ExperienceEntry = { role: string; company: string; period: string; description: string };
 
 export default function RegisterPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [resumeUrl, setResumeUrl] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-  const [educationList, setEducationList] = useState<EducationEntry[]>([]);
+  const [isLoading,      setIsLoading]      = useState(false);
+  const [isProcessingCV, setIsProcessingCV] = useState(false);
+  const [cvProcessed,    setCvProcessed]    = useState(false);
+  const [resumeUrl,      setResumeUrl]      = useState("");
+  const [firstName,      setFirstName]      = useState("");
+  const [lastName,       setLastName]       = useState("");
+  const [desiredRole,    setDesiredRole]    = useState("");
+  const [description,    setDescription]    = useState("");
+  const [skills,         setSkills]         = useState("");
+  const [avatarPreview,  setAvatarPreview]  = useState<string | null>(null);
+  const [avatarFile,     setAvatarFile]     = useState<File | null>(null);
+  const [educationList,  setEducationList]  = useState<EducationEntry[]>([]);
   const [experienceList, setExperienceList] = useState<ExperienceEntry[]>([]);
-  const router = useRouter();
 
-  const addEducation = () => setEducationList([...educationList, { degree: "", institution: "", year: "" }]);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const cvInputRef     = useRef<HTMLInputElement>(null);
+  const router         = useRouter();
+
+  // ── EDUCACIÓN ──
+  const addEducation    = () => setEducationList([...educationList, { degree: "", institution: "", year: "" }]);
   const updateEducation = (i: number, field: keyof EducationEntry, val: string) => {
     const list = [...educationList]; list[i] = { ...list[i], [field]: val }; setEducationList(list);
   };
   const removeEducation = (i: number) => setEducationList(educationList.filter((_, idx) => idx !== i));
 
-  const addExperience = () => setExperienceList([...experienceList, { role: "", company: "", period: "", description: "" }]);
+  // ── EXPERIENCIA ──
+  const addExperience    = () => setExperienceList([...experienceList, { role: "", company: "", period: "", description: "" }]);
   const updateExperience = (i: number, field: keyof ExperienceEntry, val: string) => {
     const list = [...experienceList]; list[i] = { ...list[i], [field]: val }; setExperienceList(list);
   };
   const removeExperience = (i: number) => setExperienceList(experienceList.filter((_, idx) => idx !== i));
 
+  // ── AVATAR ──
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -50,33 +57,115 @@ export default function RegisterPage() {
     reader.readAsDataURL(f);
   };
 
-  const handleProcessFile = async () => {
-    if (!file) { toast.error("Por favor, selecciona un archivo primero."); return; }
-    setIsUploading(true);
+  // ── PROCESAR CV CON GEMINI ──
+  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("El archivo no debe superar los 15MB");
+      return;
+    }
+
+    const isPdf  = file.type === "application/pdf";
+    const isWord = file.type.includes("wordprocessingml") || file.type.includes("msword");
+    const isText = file.type.startsWith("text/");
+
+    if (!isPdf && !isWord && !isText) {
+      toast.error("Formato no soportado. Usa PDF, Word (.docx) o texto.");
+      return;
+    }
+
+    setIsProcessingCV(true);
+    setCvProcessed(false);
+    toast.info("Analizando tu CV con IA...", { duration: 4000 });
+
     try {
-      const formData = new FormData();
-      formData.append("resume", file);
-      const result = await uploadResume(formData);
-      if (result?.success) {
-        setResumeUrl(result.url || "");
-        if (result.extractedData) {
-          setFirstName(result.extractedData.firstName);
-          setLastName(result.extractedData.lastName);
-          setEducationList(result.extractedData.education.map((e: string) => ({ degree: e, institution: "", year: "" })));
-          setExperienceList(result.extractedData.experience.map((e: string) => ({ role: e, company: "", period: "", description: "" })));
-          toast.success("¡Datos extraídos! Por favor, valida la información.");
-        }
-      } else if (result?.error) { toast.error(result.error); }
-    } catch { toast.error("Error al procesar el documento."); }
-    finally { setIsUploading(false); }
+      // Convertir a base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = () => reject(new Error("Error al leer el archivo"));
+        reader.readAsDataURL(file);
+      });
+
+      const body = isPdf
+        ? { pdfBase64: base64 }
+        : { fileBase64: base64, mimeType: file.type };
+
+      const response = await fetch("/api/ai/process-cv-public", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(body),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.error || "Error al procesar el CV");
+
+      const data = result.data;
+
+      // En registro no hay validación de nombre — se llena todo libremente
+      setFirstName(  data.firstName   || "");
+      setLastName(   data.lastName    || "");
+      setDesiredRole(data.desiredRole || "");
+      setDescription(data.summary     || "");
+      setSkills((data.skills || []).join("\n"));
+      setResumeUrl(file.name);
+
+      // Educación
+      if (data.education?.length > 0) {
+        setEducationList(data.education.map((edu: any) => {
+          if (typeof edu === "object" && edu !== null) {
+            return {
+              degree:      String(edu.degree      || "").trim(),
+              institution: String(edu.institution || "").trim(),
+              year:        String(edu.year        || "").trim(),
+            };
+          }
+          const raw = String(edu).trim();
+          const sep = raw.includes(" – ") ? " – " : raw.includes(" | ") ? " | " : " - ";
+          const parts = raw.split(sep);
+          return { degree: parts[0]?.trim() || raw, institution: parts[1]?.trim() || "", year: parts[2]?.trim() || "" };
+        }));
+      }
+
+      // Experiencia
+      if (data.experience?.length > 0) {
+        setExperienceList(data.experience.map((exp: any) => {
+          if (typeof exp === "object" && exp !== null) {
+            return {
+              role:        String(exp.role        || "").trim(),
+              company:     String(exp.company     || "").trim(),
+              period:      String(exp.period      || "").trim(),
+              description: String(exp.description || "").trim(),
+            };
+          }
+          const raw = String(exp).trim();
+          const sep = raw.includes(" – ") ? " – " : raw.includes(" | ") ? " | " : " - ";
+          const parts = raw.split(sep);
+          return { role: parts[0]?.trim() || raw, company: parts[1]?.trim() || "", period: parts[2]?.trim() || "", description: parts[3]?.trim() || "" };
+        }));
+      }
+
+      setCvProcessed(true);
+      toast.success("¡CV procesado! Revisa los datos y completa el formulario.");
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      toast.error(`Error al procesar el CV: ${msg}`);
+    } finally {
+      setIsProcessingCV(false);
+      if (cvInputRef.current) cvInputRef.current.value = "";
+    }
   };
 
+  // ── SUBMIT ──
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
 
-    // Subir avatar si existe
     let avatarUrl = "";
     if (avatarFile) {
       const fd = new FormData();
@@ -87,15 +176,17 @@ export default function RegisterPage() {
     }
 
     const data = {
-      firstName, lastName,
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-      description: formData.get("description") as string,
-      desiredRole: formData.get("desiredRole") as string,
-      birthDate: formData.get("birthDate") as string,
-      role: "CANDIDATE" as const,
-      education: educationList.map(e => `${e.degree} | ${e.institution} | ${e.year}`),
-      experience: experienceList.map(e => `${e.role} | ${e.company} | ${e.period} | ${e.description}`),
+      firstName,
+      lastName,
+      email:       formData.get("email")       as string,
+      password:    formData.get("password")     as string,
+      description: formData.get("description") as string || description,
+      desiredRole: formData.get("desiredRole") as string || desiredRole,
+      birthDate:   formData.get("birthDate")   as string,
+      skills:      skills.split("\n").filter(s => s.trim() !== ""),
+      role:        "CANDIDATE" as const,
+      education:   educationList.map(e  => `${e.degree} | ${e.institution} | ${e.year}`),
+      experience:  experienceList.map(e => `${e.role} | ${e.company} | ${e.period} | ${e.description}`),
       avatarUrl,
     };
 
@@ -124,43 +215,70 @@ export default function RegisterPage() {
           </div>
 
           <div className="px-8 pb-8 space-y-8">
-            {/* CV UPLOAD */}
-            <div className="bg-[#7FFFD4]/10 border border-[#7FFFD4]/30 p-5 rounded-xl flex items-start gap-4">
-              <div className="p-3 bg-white rounded-lg border border-[#7FFFD4]/50 shadow-sm">
-                <FileText className="w-6 h-6 text-[#5FD3BC]" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-black">Sube tu CV para llenar automáticamente el formulario (Opcional)</p>
-                <p className="text-xs text-gray-500 mb-3">Formatos aceptados: PDF, DOC, DOCX</p>
-                <div className="flex gap-2">
-                  <input type="file" id="resume-upload" className="hidden" accept=".pdf,.doc,.docx"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                  <label htmlFor="resume-upload"
-                    className="flex-1 h-10 border border-gray-300 rounded-lg bg-gray-50 flex items-center px-3 text-black text-sm cursor-pointer hover:border-[#5FD3BC] transition-colors overflow-hidden whitespace-nowrap">
-                    {file ? file.name : "Elegir archivo"}
-                  </label>
-                  <button type="button" onClick={handleProcessFile} disabled={isUploading || !file}
-                    style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
-                    className="flex items-center gap-2 px-5 h-10 rounded-lg font-bold text-black hover:opacity-90 disabled:opacity-50">
-                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Upload className="w-4 h-4" /> Procesar</>}
-                  </button>
+
+            {/* ── BANNER CV CON IA ── */}
+            <div className={`rounded-2xl border-2 border-dashed p-5 transition-all ${
+              cvProcessed ? "border-green-300 bg-green-50" : "border-[#7FFFD4] bg-[#7FFFD4]/10"
+            }`}>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                  cvProcessed ? "bg-green-100" : "bg-[#7FFFD4]/40"
+                }`}>
+                  {cvProcessed
+                    ? <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    : <Sparkles className="w-6 h-6 text-[#2D8A75]" />}
                 </div>
-                {resumeUrl && <p className="text-[10px] text-green-600 mt-2 font-bold">✓ Contenido extraído del documento</p>}
+                <div className="flex-1 text-center sm:text-left">
+                  <p className="font-bold text-black text-sm">
+                    {cvProcessed ? "¡CV procesado! Revisa los campos autocompletados" : "Autocompletar con CV (Opcional)"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {cvProcessed
+                      ? "Puedes editar cualquier campo antes de crear tu cuenta"
+                      : "Sube tu CV en PDF o Word y la IA completará el formulario automáticamente"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => cvInputRef.current?.click()}
+                  disabled={isProcessingCV}
+                  className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                    isProcessingCV
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : cvProcessed
+                      ? "bg-green-100 text-green-700 hover:bg-green-200"
+                      : "text-black hover:opacity-90"
+                  }`}
+                  style={!isProcessingCV && !cvProcessed ? {
+                    background: "linear-gradient(to right, #7FFFD4, #98FF98)"
+                  } : {}}
+                >
+                  {isProcessingCV
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Procesando...</>
+                    : cvProcessed
+                    ? <><FileText className="w-4 h-4" /> Subir otro CV</>
+                    : <><FileText className="w-4 h-4" /> Subir CV (PDF, Word)</>}
+                </button>
               </div>
+              <input
+                ref={cvInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                className="hidden"
+                onChange={handleCVUpload}
+              />
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+
               {/* FOTO DE PERFIL */}
               <div className="space-y-3">
                 <Label className="text-black font-bold flex items-center gap-2">
                   <User className="w-4 h-4" /> Foto de Perfil (Opcional)
                 </Label>
                 <div className="flex items-center gap-4">
-                  {/* ✅ Preview de imagen */}
-                  <div
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#5FD3BC] transition-colors overflow-hidden shrink-0"
-                  >
+                  <div onClick={() => avatarInputRef.current?.click()}
+                    className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#5FD3BC] transition-colors overflow-hidden shrink-0">
                     {avatarPreview
                       ? <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
                       : <User className="w-10 h-10 text-gray-300" />}
@@ -173,9 +291,7 @@ export default function RegisterPage() {
                     </button>
                     {avatarPreview && (
                       <button type="button" onClick={() => { setAvatarPreview(null); setAvatarFile(null); }}
-                        className="ml-2 text-sm text-red-400 hover:text-red-600">
-                        Eliminar
-                      </button>
+                        className="ml-2 text-sm text-red-400 hover:text-red-600">Eliminar</button>
                     )}
                     <p className="text-xs text-gray-400 mt-1">JPG, PNG o WEBP · Máx 5MB</p>
                   </div>
@@ -188,12 +304,12 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-black font-semibold">Nombres *</Label>
-                    <Input name="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                    <Input value={firstName} onChange={(e) => setFirstName(e.target.value)}
                       placeholder="Ej: Juan Carlos" required className="bg-gray-50 border-gray-300 text-black" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-black font-semibold">Apellidos *</Label>
-                    <Input name="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                    <Input value={lastName} onChange={(e) => setLastName(e.target.value)}
                       placeholder="Ej: García López" required className="bg-gray-50 border-gray-300 text-black" />
                   </div>
                   <div className="space-y-2">
@@ -203,9 +319,27 @@ export default function RegisterPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-black font-semibold">Descripción Personal (Opcional)</Label>
-                  <Textarea name="description" placeholder="Escribe una breve descripción de ti mismo"
-                    className="min-h-[120px] text-black bg-gray-50 border-gray-300" />
+                  <Textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Escribe una breve descripción de ti mismo"
+                    className="min-h-[100px] text-black bg-gray-50 border-gray-300" />
                 </div>
+              </div>
+
+              {/* CARGO DESEADO */}
+              <div className="space-y-2">
+                <Label className="text-black font-semibold">Cargo Deseado *</Label>
+                <Input value={desiredRole} onChange={(e) => setDesiredRole(e.target.value)}
+                  name="desiredRole" placeholder="Ej: Desarrollador Backend" required
+                  className="bg-gray-50 border-gray-300 text-black" />
+              </div>
+
+              {/* HABILIDADES */}
+              <div className="space-y-2">
+                <Label className="text-black font-semibold">Habilidades (Opcional)</Label>
+                <p className="text-xs text-gray-400">Una por línea</p>
+                <Textarea value={skills} onChange={(e) => setSkills(e.target.value)}
+                  placeholder="React&#10;Node.js&#10;TypeScript"
+                  className="min-h-[100px] text-black bg-gray-50 border-gray-300" />
               </div>
 
               {/* EDUCACIÓN */}
@@ -229,6 +363,9 @@ export default function RegisterPage() {
                     <Input value={edu.year} onChange={(e) => updateEducation(i, "year", e.target.value)} placeholder="Año (Ej: 2019-2023)" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
                   </div>
                 ))}
+                {educationList.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-2">No hay entradas. Sube tu CV o haz clic en Agregar.</p>
+                )}
               </div>
 
               {/* EXPERIENCIA */}
@@ -253,12 +390,9 @@ export default function RegisterPage() {
                     <Textarea value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)} placeholder="Descripción de responsabilidades..." className="min-h-[80px] rounded-lg text-black border-gray-200 bg-white" />
                   </div>
                 ))}
-              </div>
-
-              {/* CARGO DESEADO */}
-              <div className="space-y-2">
-                <Label className="text-black font-semibold">Cargo Deseado *</Label>
-                <Input name="desiredRole" placeholder="Ej: Analista Senior de Datos" required className="bg-gray-50 border-gray-300 text-black" />
+                {experienceList.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-2">No hay entradas. Sube tu CV o haz clic en Agregar.</p>
+                )}
               </div>
 
               {/* CREDENCIALES */}

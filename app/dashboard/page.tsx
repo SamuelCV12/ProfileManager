@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import prisma from "../../lib/prisma";
-import { calculateMatchScore } from "../../lib/recommender";
+import { calculateMatchScore } from "../../lib/match";
 import ClientDashboard from "./ClientDashboard";
 import { getSessionUserId } from "../actions/auth";
 

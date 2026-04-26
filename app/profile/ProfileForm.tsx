@@ -8,7 +8,7 @@ import { uploadAvatar } from "../actions/upload-avatar";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Save, User, Loader2, Plus, Trash2, Camera } from "lucide-react";
+import { Save, User, Loader2, Plus, Trash2, Camera, FileText, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 type EducationEntry = { degree: string; institution: string; year: string };
@@ -47,8 +47,11 @@ export default function ProfileForm({ profile }: any) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isProcessingCV, setIsProcessingCV] = useState(false);
+  const [cvProcessed, setCvProcessed] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatarUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cvInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", desiredRole: "", description: "",
@@ -89,17 +92,15 @@ export default function ProfileForm({ profile }: any) {
 
   const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // ✅ Subir avatar al seleccionar
+  // ── SUBIR AVATAR ──
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Preview inmediato
     const reader = new FileReader();
     reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
 
-    // Subir al servidor
     setIsUploadingAvatar(true);
     const fd = new FormData();
     fd.append("avatar", file);
@@ -111,10 +112,197 @@ export default function ProfileForm({ profile }: any) {
       setAvatarPreview(profile?.avatarUrl || null);
     } else {
       toast.success("Foto subida. Guarda los cambios para confirmar.");
-      // Guardamos la URL en formData para que se envíe al guardar
       setFormData(prev => ({ ...prev, avatarUrl: result.url } as any));
     }
   };
+
+  // ── PROCESAR CV CON IA ──
+  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamaño (15MB máx)
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("El archivo no debe superar los 15MB");
+      return;
+    }
+
+    const isPdf  = file.type === "application/pdf";
+    const isWord = file.type.includes("wordprocessingml") || file.type.includes("msword");
+    const isText = file.type.startsWith("text/");
+
+    if (!isPdf && !isWord && !isText) {
+      toast.error("Formato no soportado. Usa PDF, Word (.docx) o texto.");
+      return;
+    }
+
+    setIsProcessingCV(true);
+    setCvProcessed(false);
+    toast.info("Analizando tu CV con IA...", { duration: 4000 });
+
+    try {
+      // Convertir archivo a base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = () => reject(new Error("Error al leer el archivo"));
+        reader.readAsDataURL(file);
+      });
+
+      // Llamar a la API — PDF va directo, Word/texto se extrae en servidor
+      const body = isPdf
+        ? { pdfBase64: base64 }
+        : { fileBase64: base64, mimeType: file.type };
+
+      const response = await fetch("/api/ai/process-cv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error al procesar el CV");
+      }
+
+      const data = result.data;
+
+      // ── VERIFICAR que el CV pertenece al usuario actual ──
+      const profileFirstName = formData.firstName?.trim().toLowerCase();
+      const profileLastName  = formData.lastName?.trim().toLowerCase();
+      const cvFirstName      = data.firstName?.trim().toLowerCase();
+      const cvLastName       = data.lastName?.trim().toLowerCase();
+
+      // Solo validar si el perfil ya tiene nombre guardado
+      if (profileFirstName && profileLastName && cvFirstName && cvLastName) {
+        const firstNameMatch = profileFirstName.includes(cvFirstName) || cvFirstName.includes(profileFirstName);
+        const lastNameMatch  = profileLastName.includes(cvLastName)   || cvLastName.includes(profileLastName);
+
+        if (!firstNameMatch && !lastNameMatch) {
+          toast.error(
+            `Este CV parece pertenecer a ${data.firstName} ${data.lastName}, no a ${formData.firstName} ${formData.lastName}. Por favor sube tu propio CV.`,
+            { duration: 6000 }
+          );
+          setIsProcessingCV(false);
+          if (cvInputRef.current) cvInputRef.current.value = "";
+          return;
+        }
+      }
+
+      // ── AUTOCOMPLETAR el formulario con los datos extraídos ──
+      setFormData(prev => ({
+        ...prev,
+        // Campos de identidad: SOLO llenar si están vacíos — nunca sobreescribir
+        firstName:   (!prev.firstName?.trim() && data.firstName)  ? data.firstName  : prev.firstName,
+        lastName:    (!prev.lastName?.trim()  && data.lastName)   ? data.lastName   : prev.lastName,
+        phone:       (!prev.phone?.trim()     && data.phone)      ? data.phone      : prev.phone,
+        // Campos profesionales: actualizar siempre desde el CV
+        desiredRole: data.desiredRole || prev.desiredRole,
+        description: data.summary    || prev.description,
+        // Skills: combinar existentes + nuevas del CV (sin duplicados)
+        skills: mergeSkills(prev.skills, data.skills || []),
+      }));
+
+      // Autocompletar educación — siempre reemplaza con los datos del CV
+      if (data.education && data.education.length > 0) {
+        const parsedEdu: EducationEntry[] = data.education.map((edu: any) => {
+          // Caso 1: Gemini devuelve objeto correcto { degree, institution, year }
+          if (typeof edu === "object" && edu !== null) {
+            return {
+              degree:      String(edu.degree      || "").trim(),
+              institution: String(edu.institution || "").trim(),
+              year:        String(edu.year        || "").trim(),
+            };
+          }
+          // Caso 2: Gemini devuelve string — parsear manualmente
+          // Ej: "Ingeniería de Sistemas – Universidad EAFIT | En curso (2026)"
+          const raw = String(edu).trim();
+          let degree = raw, institution = "", year = "";
+
+          if (raw.includes(" – ") && raw.includes(" | ")) {
+            // Formato: "Título – Institución | Año"
+            const [titlePart, yearPart] = raw.split(" | ");
+            const [deg, inst] = titlePart.split(" – ");
+            degree      = deg?.trim()      || raw;
+            institution = inst?.trim()     || "";
+            year        = yearPart?.trim() || "";
+          } else if (raw.includes(" – ")) {
+            const [deg, rest] = raw.split(" – ");
+            degree      = deg?.trim()  || raw;
+            institution = rest?.trim() || "";
+          } else if (raw.includes(" | ")) {
+            const parts = raw.split(" | ");
+            degree      = parts[0]?.trim() || raw;
+            institution = parts[1]?.trim() || "";
+            year        = parts[2]?.trim() || "";
+          }
+          return { degree, institution, year };
+        });
+        setEducationList(parsedEdu);
+      }
+
+      // Autocompletar experiencia — siempre reemplaza con los datos del CV
+      if (data.experience && data.experience.length > 0) {
+        const parsedExp: ExperienceEntry[] = data.experience.map((exp: any) => {
+          // Caso 1: Gemini devuelve objeto correcto { role, company, period, description }
+          if (typeof exp === "object" && exp !== null) {
+            return {
+              role:        String(exp.role        || "").trim(),
+              company:     String(exp.company     || "").trim(),
+              period:      String(exp.period      || "").trim(),
+              description: String(exp.description || "").trim(),
+            };
+          }
+          // Caso 2: Gemini devuelve string — parsear manualmente
+          // Ej: "Desarrollador Junior – Empresa X | Enero 2025 – Presente | Descripción..."
+          const raw = String(exp).trim();
+          let role = raw, company = "", period = "", description = "";
+
+          if (raw.includes(" – ") && raw.includes(" | ")) {
+            const parts = raw.split(" | ");
+            const [r, c] = parts[0].split(" – ");
+            role        = r?.trim()        || raw;
+            company     = c?.trim()        || "";
+            period      = parts[1]?.trim() || "";
+            description = parts[2]?.trim() || "";
+          } else if (raw.includes(" – ")) {
+            const [r, rest] = raw.split(" – ");
+            role    = r?.trim()    || raw;
+            company = rest?.trim() || "";
+          } else if (raw.includes(" | ")) {
+            const parts = raw.split(" | ");
+            role    = parts[0]?.trim() || raw;
+            company = parts[1]?.trim() || "";
+            period  = parts[2]?.trim() || "";
+          }
+          return { role, company, period, description };
+        });
+        setExperienceList(parsedExp);
+      }
+
+      setCvProcessed(true);
+      toast.success("¡CV procesado! Revisa los datos y guarda los cambios.");
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      toast.error(`Error al procesar el CV: ${msg}`);
+    } finally {
+      setIsProcessingCV(false);
+      // Limpiar el input para permitir re-subir el mismo archivo
+      if (cvInputRef.current) cvInputRef.current.value = "";
+    }
+  };
+
+  // Combina skills existentes con las nuevas sin duplicar
+  function mergeSkills(existing: string, newSkills: string[]): string {
+    const existingList = existing.split("\n").map(s => s.trim().toLowerCase()).filter(Boolean);
+    const toAdd = newSkills.filter(s => !existingList.includes(s.toLowerCase()));
+    if (toAdd.length === 0) return existing;
+    return existing
+      ? `${existing}\n${toAdd.join("\n")}`
+      : toAdd.join("\n");
+  }
 
   const addEducation    = () => setEducationList([...educationList, { degree: "", institution: "", year: "" }]);
   const updateEducation = (i: number, field: keyof EducationEntry, val: string) => {
@@ -178,6 +366,63 @@ export default function ProfileForm({ profile }: any) {
 
       <form onSubmit={handleSubmit} className="px-6 py-6 space-y-8">
 
+        {/* ─── BANNER: SUBIR CV CON IA ─── */}
+        <div className={`rounded-2xl border-2 border-dashed p-5 transition-all ${
+          cvProcessed
+            ? "border-green-300 bg-green-50"
+            : "border-[#7FFFD4] bg-[#7FFFD4]/10"
+        }`}>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+              cvProcessed ? "bg-green-100" : "bg-[#7FFFD4]/40"
+            }`}>
+              {cvProcessed
+                ? <CheckCircle2 className="w-6 h-6 text-green-600" />
+                : <Sparkles className="w-6 h-6 text-[#2D8A75]" />}
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <p className="font-bold text-black text-sm">
+                {cvProcessed ? "¡CV procesado exitosamente!" : "Autocompletar con CV (IA)"}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {cvProcessed
+                  ? "Revisa los campos autocompletados y guarda los cambios"
+                  : "Sube tu CV en PDF o Word (.docx) y la IA completará automáticamente tu perfil"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => cvInputRef.current?.click()}
+              disabled={isProcessingCV}
+              className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                isProcessingCV
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : cvProcessed
+                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                  : "text-black hover:opacity-90"
+              }`}
+              style={!isProcessingCV && !cvProcessed ? {
+                background: "linear-gradient(to right, #7FFFD4, #98FF98)"
+              } : {}}
+            >
+              {isProcessingCV ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Procesando...</>
+              ) : cvProcessed ? (
+                <><FileText className="w-4 h-4" /> Subir otro CV</>
+              ) : (
+                <><FileText className="w-4 h-4" /> Subir CV (PDF, Word)</>
+              )}
+            </button>
+          </div>
+          <input
+            ref={cvInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+            className="hidden"
+            onChange={handleCVUpload}
+          />
+        </div>
+
         {/* ─── FOTO DE PERFIL ─── */}
         <div className="flex flex-col items-center gap-2 pb-4 border-b border-gray-100">
           <div className="relative">
@@ -188,7 +433,6 @@ export default function ProfileForm({ profile }: any) {
                 <User className="w-10 h-10 text-gray-300" />
               )}
             </div>
-            {/* Botón cámara sobre la foto */}
             <button type="button" onClick={() => fileInputRef.current?.click()}
               className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#5FD3BC] flex items-center justify-center shadow-md hover:bg-[#7FFFD4] transition-colors">
               {isUploadingAvatar
