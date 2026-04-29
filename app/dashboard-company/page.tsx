@@ -7,11 +7,13 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardCompanyPage() {
   const userId = await getSessionUserId();
+  console.log("🔍 userId de sesión:", userId);
 
   if (!userId) {
     redirect("/");
   }
 
+  console.log("🔍 buscando con userId:", userId);
   const empresaActiva = await prisma.company.findUnique({
     where: { userId },
     include: {
@@ -20,6 +22,8 @@ export default async function DashboardCompanyPage() {
       }
     }
   });
+
+  console.log("🏢 empresa encontrada:", empresaActiva);
 
   if (!empresaActiva) {
     redirect("/");
