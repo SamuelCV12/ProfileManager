@@ -2,6 +2,8 @@
 "use client";
 
 import { MapPin, Monitor, DollarSign, Calendar, CheckCircle, Clock, XCircle } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
+import { useTranslatedContent } from "../../hooks/useTranslatedContent";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   POSTULADO:   { label: "Postulado",   color: "bg-blue-50 text-blue-700 border border-blue-200",          icon: Clock },
@@ -27,6 +29,8 @@ function formatDateTime(dateStr: string) {
 }
 
 export function ApplicationCard({ title, company, location, modalidad, salaryRange, status, appliedAt, interviewDate }: any) {
+  const { t } = useLanguage();
+  const { content } = useTranslatedContent({ title, company });
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG["POSTULADO"];
   const Icon = cfg.icon;
 
@@ -37,8 +41,8 @@ export function ApplicationCard({ title, company, location, modalidad, salaryRan
         {/* COLUMNA IZQUIERDA — info apilada verticalmente */}
         <div className="flex-1 space-y-3">
           <div>
-            <h3 className="text-lg font-bold text-black leading-tight">{title}</h3>
-            <p className="text-gray-500 text-sm mt-0.5">{company}</p>
+            <h3 className="text-lg font-bold text-black leading-tight">{content.title || title}</h3>
+            <p className="text-gray-500 text-sm mt-0.5">{content.company || company}</p>
           </div>
 
           {/* Cada dato en su propia línea */}
@@ -72,7 +76,7 @@ export function ApplicationCard({ title, company, location, modalidad, salaryRan
           {/* Fecha de postulación */}
           {appliedAt && (
             <div className="text-right">
-              <p className="text-xs text-gray-400">Fecha de postulación:</p>
+              <p className="text-xs text-gray-400">{t.appliedAt}:</p>
               <p className="text-sm text-gray-600 font-medium">{formatDate(appliedAt)}</p>
             </div>
           )}
@@ -82,7 +86,7 @@ export function ApplicationCard({ title, company, location, modalidad, salaryRan
             <div className="flex items-start gap-2 bg-[#7FFFD4]/15 border border-[#5FD3BC]/30 rounded-xl px-3 py-2 w-full">
               <Calendar className="w-4 h-4 text-[#5FD3BC] mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-bold text-[#1a7a65]">Cita programada</p>
+                <p className="text-xs font-bold text-[#1a7a65]">{t.scheduledInterview}</p>
                 <p className="text-xs text-gray-600">{formatDateTime(interviewDate)}</p>
               </div>
             </div>

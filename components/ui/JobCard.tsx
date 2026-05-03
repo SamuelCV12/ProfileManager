@@ -3,6 +3,8 @@
 
 import { useState } from "react";
 import { MapPin, EyeOff, Eye, Loader2, Monitor, DollarSign } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
+import { useTranslatedContent } from "../../hooks/useTranslatedContent";
 import { applyToVacancy } from "../../app/actions/apply";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -24,6 +26,8 @@ export function JobCard({
   isApplied, status, salaryRange, description, modalidad, isUrgent,
   onHide, isHidden, onVerDetalle
 }: any) {
+  const { t } = useLanguage();
+  const { content, isTranslating } = useTranslatedContent({ title, company, description: description || "" });
   const [isLoading, setIsLoading] = useState(false);
   const [applied,   setApplied]   = useState(isApplied);
 
@@ -52,7 +56,7 @@ export function JobCard({
             <span className={`px-3 py-1 rounded-full text-xs font-bold ${
               isUrgent ? "bg-red-100 text-red-600" : "bg-[#7FFFD4]/30 text-[#2D8A75]"
             }`}>
-              {isUrgent ? "Urgente" : "Abierta"}
+              {isUrgent ? t.urgent : t.open}
             </span>
           ) : (
             <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig?.color || "bg-gray-100 text-gray-600"}`}>
@@ -75,8 +79,8 @@ export function JobCard({
 
       {/* TÍTULO Y EMPRESA */}
       <div>
-        <h3 className="text-lg font-bold text-black leading-tight">{title}</h3>
-        <p className="text-gray-500 text-sm mt-0.5">{company}</p>
+        <h3 className="text-lg font-bold text-black leading-tight">{content.title || title}</h3>
+        <p className="text-gray-500 text-sm mt-0.5">{content.company || company}</p>
       </div>
 
       {/* UBICACIÓN Y MODALIDAD */}
@@ -99,8 +103,8 @@ export function JobCard({
       )}
 
       {/* DESCRIPCIÓN (preview) */}
-      {description && (
-        <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
+      {content.description && (
+        <p className="text-sm text-gray-500 line-clamp-2">{isTranslating ? `${t.loading}...` : content.description}</p>
       )}
 
       {/* TAGS */}
@@ -124,7 +128,7 @@ export function JobCard({
         {onVerDetalle && (
           <button type="button" onClick={onVerDetalle}
             className="flex-1 h-11 rounded-xl font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all text-sm">
-            Ver detalle
+            {t.viewDetail}
           </button>
         )}
         <button
@@ -135,7 +139,7 @@ export function JobCard({
             applied ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "text-black hover:opacity-90"
           }`}
         >
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : applied ? "Postulado ✓" : "Postularme"}
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : applied ? `${t.applied}` : t.applyNow}
         </button>
       </div>
     </div>

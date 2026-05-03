@@ -1,6 +1,6 @@
 // lib/match.ts
 // Algoritmo de match determinístico (tu lógica original preservada y exportada)
-// Este archivo es importado por la ruta /api/ai/match
+
 
 /**
  * Calcula el score de match entre un perfil y una vacante.

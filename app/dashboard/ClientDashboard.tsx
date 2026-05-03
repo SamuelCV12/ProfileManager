@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Search, SlidersHorizontal, MapPin, Monitor, DollarSign, CheckCircle2, Briefcase, X } from "lucide-react";
+import { Search, SlidersHorizontal, MapPin, Monitor, DollarSign, Briefcase } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 import { JobCard } from "../../components/ui/JobCard";
 import { ApplicationCard } from "../../components/ui/ApplicationCard";
 import { Button } from "../../components/ui/button";
@@ -27,49 +28,94 @@ function getMatchColor(match: number) {
   return "bg-red-50 text-red-500 border border-red-100";
 }
 
-function ProfileCompletionBanner({ profile }: { profile: any }) {
-  const pct = profile?.completitud ?? 0;
-  const getColor = () => {
+function ProfileCard({ profile, t }: { profile: any; t: any }) {
+  // Calcular completitud real en el cliente para evitar valores viejos de BD
+  const calcularCompletitud = (p: any): number => {
+    let score = 0;
+    if (p?.firstName?.trim())                              score += 10;
+    if (p?.lastName?.trim())                               score += 10;
+    if (p?.desiredRole?.trim())                            score += 10;
+    if (p?.description?.trim())                            score += 10;
+    if (p?.birthDate)                                      score += 10;
+    if (p?.phone?.trim())                                  score += 10;
+    if (Array.isArray(p?.skills)     && p.skills.length > 0)     score += 10;
+    if (Array.isArray(p?.education)  && p.education.length > 0)  score += 10;
+    if (Array.isArray(p?.experience) && p.experience.length > 0) score += 10;
+    if (p?.avatarUrl?.trim())                              score += 10;
+    return Math.min(score, 100);
+  };
+
+  const pct = calcularCompletitud(profile);
+
+  const getBarColor = () => {
     if (pct === 100) return "from-[#5FD3BC] to-[#7FFFD4]";
     if (pct >= 70)   return "from-[#7FFFD4] to-[#98FF98]";
     if (pct >= 40)   return "from-yellow-300 to-yellow-400";
     return "from-red-300 to-red-400";
   };
+
   const getMessage = () => {
-    if (pct === 100) return "¡Perfil completo! Tienes más posibilidades de ser encontrado.";
-    if (pct >= 70)   return "Buen progreso. Completa tu perfil para mejorar tus matches.";
-    if (pct >= 40)   return "Tu perfil está incompleto. Agregar más info mejora tu visibilidad.";
-    return "Perfil muy incompleto. Complétalo para empezar a recibir matches.";
+    if (pct === 100) return t.profileComplete;
+    if (pct >= 70)   return t.profileGood;
+    if (pct >= 40)   return t.profileIncomplete;
+    return t.profileVeryIncomplete;
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#7FFFD4]/30 flex items-center justify-center">
-            <CheckCircle2 className="w-4 h-4 text-[#2D8A75]" />
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm mb-6 overflow-hidden">
+      {/* Banda superior degradada */}
+      <div className="h-16 w-full" style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }} />
+
+      <div className="px-6 pb-5">
+        {/* Layout: info izquierda + foto derecha */}
+        <div className="flex items-start justify-between gap-4">
+          
+          {/* Izquierda: nombre, cargo, barra */}
+          <div className="flex-1 pt-3">
+            <h2 className="text-xl font-black text-black leading-tight">
+              {profile?.firstName} {profile?.lastName}
+            </h2>
+            {profile?.desiredRole && (
+              <p className="text-sm text-gray-500 mt-0.5 font-medium">{profile.desiredRole}</p>
+            )}
+
+            {/* Barra de completitud */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{t.profileCompletion}</span>
+                <span className="text-sm font-black text-black">{pct}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className={`h-full bg-gradient-to-r ${getBarColor()} transition-all duration-700 rounded-full`}
+                  style={{ width: `${pct}%` }} />
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">{getMessage()}</p>
+            </div>
           </div>
-          <span className="font-bold text-black text-sm">Completitud del Perfil</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-black text-black">{pct}%</span>
-          <Link href="/profile"
-            className="text-xs font-bold px-3 py-1.5 rounded-lg text-black hover:opacity-80 transition-all"
-            style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}>
-            Completar
-          </Link>
+
+          {/* Derecha: foto grande + botón editar */}
+          <div className="flex flex-col items-center gap-2 -mt-12 shrink-0">
+            <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+              {profile?.avatarUrl
+                ? <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                : <span className="text-3xl font-black text-gray-400">
+                    {profile?.firstName?.charAt(0)?.toUpperCase() || "U"}
+                  </span>}
+            </div>
+            <Link href="/profile"
+              className="text-xs font-bold px-4 py-1.5 rounded-xl text-black hover:opacity-80 transition-all whitespace-nowrap"
+              style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}>
+              {t.editProfile}
+            </Link>
+          </div>
         </div>
       </div>
-      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full bg-gradient-to-r ${getColor()} transition-all duration-700 rounded-full`}
-          style={{ width: `${pct}%` }} />
-      </div>
-      <p className="text-xs text-gray-400 mt-1.5">{getMessage()}</p>
     </div>
   );
 }
 
 export default function ClientDashboard({ profile, vacantes, postulaciones, autoPostuladas }: any) {
+  const { t } = useLanguage();
   const [busqueda,         setBusqueda]         = useState("");
   const [filtroModalidad,  setFiltroModalidad]  = useState<string>("todas");
   const [filtroSalarioMin, setFiltroSalarioMin] = useState<string>("");
@@ -146,27 +192,27 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8">
 
         {/* ── BIENVENIDA ── */}
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-black leading-tight">
-            Bienvenido de nuevo{profile?.firstName ? `, ${profile.firstName}` : ""}
+        <div className="mb-4">
+          <h1 className="text-3xl font-bold text-black leading-tight">
+            {t.welcome}{profile?.firstName ? `, ${profile.firstName}` : ""} 👋
           </h1>
         </div>
 
-        {/* ── BANNER COMPLETITUD ── */}
-        <ProfileCompletionBanner profile={profile} />
+        {/* ── TARJETA DE PERFIL ── */}
+        <ProfileCard profile={profile} t={t} />
 
         {/* ── BUSCADOR + FILTROS ── */}
         <div className="space-y-4 mb-8">
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input type="text" placeholder="Buscar por puesto o empresa..."
+              <Input type="text" placeholder={`${t.search} ${t.recommendedJobs.toLowerCase()}...`}
                 value={busqueda} onChange={e => setBusqueda(e.target.value)}
                 className="w-full pl-12 h-12 bg-gray-50 border-gray-200 rounded-xl text-black" />
             </div>
             <Button variant="outline" onClick={() => setMostrarFiltros(!mostrarFiltros)}
               className="h-12 border-gray-200 text-gray-700 rounded-xl px-6 font-semibold">
-              <SlidersHorizontal className="w-5 h-5 mr-2" /> Filtros
+              <SlidersHorizontal className="w-5 h-5 mr-2" /> {t.filters}
             </Button>
           </div>
 
@@ -178,7 +224,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
                   {/* Slider match mínimo */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <Label className="text-black font-semibold">Match mínimo</Label>
+                      <Label className="text-black font-semibold">{t.minMatch}</Label>
                       <span className="text-lg font-black text-[#2D8A75]">{matchMinimo}%</span>
                     </div>
                     <input type="range" min={0} max={100} step={5}
@@ -193,23 +239,23 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
 
                   {/* Modalidad */}
                   <div className="space-y-2">
-                    <Label className="text-black font-semibold">Modalidad</Label>
+                    <Label className="text-black font-semibold">{t.modality}</Label>
                     <Select value={filtroModalidad} onValueChange={setFiltroModalidad}>
                       <SelectTrigger className="w-full border-gray-200 h-11 bg-gray-50 text-black rounded-xl">
-                        <SelectValue placeholder="Todas las modalidades" />
+                        <SelectValue placeholder={t.allModalities} />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
-                        <SelectItem value="todas">Todas</SelectItem>
-                        <SelectItem value="Remoto">Remoto</SelectItem>
-                        <SelectItem value="Presencial">Presencial</SelectItem>
-                        <SelectItem value="Híbrido">Híbrido</SelectItem>
+                        <SelectItem value="todas">{t.allModalities}</SelectItem>
+                        <SelectItem value="Remoto">{t.remote}</SelectItem>
+                        <SelectItem value="Presencial">{t.onsite}</SelectItem>
+                        <SelectItem value="Híbrido">{t.hybrid}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Salario mínimo */}
                   <div className="space-y-2">
-                    <Label className="text-black font-semibold">Salario mínimo (COP)</Label>
+                    <Label className="text-black font-semibold">{t.minSalary}</Label>
                     <Input type="number" placeholder="Ej: 5000000"
                       value={filtroSalarioMin} onChange={e => setFiltroSalarioMin(e.target.value)}
                       className="border-gray-200 h-11 bg-gray-50 text-black rounded-xl" />
@@ -225,11 +271,11 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
           <TabsList className="mb-6 bg-transparent gap-4 h-auto p-0">
             <TabsTrigger value="vacantes"
               className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#7FFFD4] data-[state=active]:text-black border border-gray-200 text-gray-500 font-bold">
-              Vacantes Recomendadas ({vacantesFiltradas.length})
+              {t.recommendedJobs} ({vacantesFiltradas.length})
             </TabsTrigger>
             <TabsTrigger value="postulaciones"
               className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#7FFFD4] data-[state=active]:text-black border border-gray-200 text-gray-500 font-bold">
-              Mis Postulaciones ({postulaciones.length})
+              {t.myApplications} ({postulaciones.length})
             </TabsTrigger>
           </TabsList>
 
@@ -255,8 +301,8 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
             {vacantesFiltradas.length === 0 && (
               <div className="text-center py-20 text-gray-400">
                 <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="font-medium">No hay vacantes con ese nivel de compatibilidad.</p>
-                <p className="text-sm mt-1">Prueba bajando el filtro de match mínimo.</p>
+                <p className="font-medium">{t.noVacancies}</p>
+                <p className="text-sm mt-1">{t.tryLowerMatch}</p>
               </div>
             )}
           </TabsContent>
@@ -277,7 +323,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
               ))}
               {postulaciones.length === 0 && (
                 <div className="text-center py-20 text-gray-400">
-                  <p className="font-medium">Aún no te has postulado a ninguna vacante.</p>
+                  <p className="font-medium">{t.noApplications}</p>
                 </div>
               )}
             </div>
@@ -379,7 +425,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
 
       <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
         className="w-full py-4 text-center text-sm text-black/70 font-medium mt-auto">
-        © 2026 ProfileManager. Todos los derechos reservados.
+        {t.footer}
       </footer>
     </div>
   );
