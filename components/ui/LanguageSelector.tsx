@@ -45,7 +45,7 @@ export default function LanguageSelector() {
         {isTranslating
           ? <Loader2 className="w-4 h-4 animate-spin" />
           : <Languages className="w-4 h-4" />}
-        <span>{currentLang.flag} {currentLang.label}</span>
+        <span> {currentLang.label}</span>
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -59,7 +59,7 @@ export default function LanguageSelector() {
               className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-black hover:bg-gray-50 transition-colors"
             >
               <span className="flex items-center gap-2">
-                <span>{lang.flag}</span>
+                <span></span>
                 {lang.label}
               </span>
               {locale === lang.code && <Check className="w-4 h-4 text-[#5FD3BC]" />}

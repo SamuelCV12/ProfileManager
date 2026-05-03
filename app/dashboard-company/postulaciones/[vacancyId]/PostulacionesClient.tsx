@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "../../../../context/LanguageContext";
 import {
   ArrowLeft, Search, SlidersHorizontal, Mail, Phone,
   MapPin, X, ChevronDown, Eye, GraduationCap, Briefcase,
@@ -64,6 +65,7 @@ export default function PostulacionesClient({
   vacancyMustHave: string[]; companyInitials: string;
   postulaciones: Postulacion[];
 }) {
+  const { t } = useLanguage();
   const [postulaciones, setPostulaciones] = useState<Postulacion[]>(postulacionesIniciales);
 
   // filtros
@@ -131,7 +133,7 @@ export default function PostulacionesClient({
         <Link href="/dashboard-company"
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black transition-colors mb-5 font-medium"
         >
-          <ArrowLeft className="w-4 h-4" /> Volver al panel
+          <ArrowLeft className="w-4 h-4" /> {t.backToPanel}
         </Link>
 
         {/* info de la vacante */}
@@ -158,7 +160,7 @@ export default function PostulacionesClient({
             {/* must have skills */}
             {vacancyMustHave.length > 0 && (
               <div className="shrink-0">
-                <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">Skills requeridas</p>
+                <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">{t.skillsRequired}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {vacancyMustHave.map((s, i) => (
                     <Badge key={i} variant="outline" className="bg-[#7FFFD4]/20 text-black border-[#5FD3BC] text-xs">
@@ -191,7 +193,7 @@ export default function PostulacionesClient({
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
-              placeholder="Buscar por nombre o email..."
+              placeholder={t.searchCandidate}
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
               className="pl-12 h-12 border-gray-200 bg-white text-black rounded-xl"

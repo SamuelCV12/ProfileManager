@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Building2, Plus, X, Briefcase, Loader2 } from "lucide-react";
@@ -11,6 +12,7 @@ import { registerCompany } from "../actions/register-company";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 
 export default function RegisterCompanyPage() {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -43,7 +45,7 @@ export default function RegisterCompanyPage() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("¡Empresa registrada exitosamente!");
+        toast.success(t.companyRegistered || "\u00a1Empresa registrada exitosamente!");
         router.push("/");
       }
     } catch {
@@ -76,46 +78,46 @@ export default function RegisterCompanyPage() {
                 <Building2 className="w-7 h-7 text-black" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-black">Registro de Empresa</h1>
-                <p className="text-gray-500 text-sm mt-0.5">Completa el formulario para registrar tu empresa</p>
+                <h1 className="text-2xl font-bold text-black">{t.registerCompany}</h1>
+                <p className="text-gray-500 text-sm mt-0.5">{t.companyRegisterDesc}</p>
               </div>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="px-8 py-8 space-y-8">
 
-            {/* ─── INFORMACIÓN DE LA EMPRESA ─── */}
+            {/* --- INFORMACIÓN DE LA EMPRESA --- */}
             <section className="space-y-4">
-              <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">Información de la Empresa</h3>
+              <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">{t.companyInfo}</h3>
 
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">Nombre de la Empresa *</Label>
+                <Label className="text-black font-semibold text-sm">{t.companyName} *</Label>
                 <Input name="name" placeholder="Tech Solutions Colombia S.A.S" required
                   className="h-11 bg-gray-50 border-gray-200 text-black" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-black font-semibold text-sm">NIT *</Label>
+                  <Label className="text-black font-semibold text-sm">{t.nit} *</Label>
                   <Input name="nit" placeholder="900123456-7" required
                     className="h-11 bg-gray-50 border-gray-200 text-black" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-black font-semibold text-sm">Ubicación *</Label>
+                  <Label className="text-black font-semibold text-sm">{t.locationLabel} *</Label>
                   <Input name="location" placeholder="Bogotá, Colombia" required
                     className="h-11 bg-gray-50 border-gray-200 text-black" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">Core de Negocios *</Label>
+                <Label className="text-black font-semibold text-sm">{t.coreBusiness} *</Label>
                 <textarea name="coreBusiness" required
                   className="flex min-h-[120px] w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-black placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FD3BC]"
                   placeholder="Describe el giro principal de tu empresa (ej: Desarrollo de software, Consultoría tecnológica, etc.)" />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">Número Aproximado de Empleados *</Label>
+                <Label className="text-black font-semibold text-sm">{t.employeeCount} *</Label>
                 <Input name="employeeCount" type="number" placeholder="50" required
                   className="h-11 bg-gray-50 border-gray-200 text-black" />
               </div>

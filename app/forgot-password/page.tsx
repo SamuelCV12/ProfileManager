@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "../../context/LanguageContext";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -11,6 +12,7 @@ import { Loader2, ArrowLeft, Mail, KeyRound } from "lucide-react";
 import { requestPasswordReset } from "../actions/reset-password"; 
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
@@ -29,7 +31,7 @@ export default function ForgotPasswordPage() {
         toast.error(result.error);
       } else {
         setEmailSent(true);
-        toast.success("¡Revisa tu terminal de VS Code!");
+        toast.success(t.checkVSCode || "¡Revisa tu terminal de VS Code!");
       }
     } catch (err) {
       toast.error("Ocurrió un error de conexión.");
@@ -45,11 +47,11 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto w-12 h-12 bg-[#7FFFD4]/20 rounded-full flex items-center justify-center mb-4">
             <KeyRound className="w-6 h-6 text-[#5FD3BC]" />
           </div>
-          <CardTitle className="text-2xl font-bold text-black">Recuperar tu cuenta</CardTitle>
+          <CardTitle className="text-2xl font-bold text-black">{t.recoverAccount}</CardTitle>
           <p className="text-sm text-gray-500 mt-2">
             {!emailSent 
-              ? "Ingresa tu correo electrónico y te enviaremos un enlace seguro." 
-              : "Revisa la terminal de VS Code para ver el enlace secreto."}
+              ? (t.enterEmailForReset || "Ingresa tu correo electrónico y te enviaremos un enlace seguro.")
+              : (t.checkVSCodeLink || "Revisa la terminal de VS Code para ver el enlace secreto.")}
           </p>
         </CardHeader>
         
@@ -57,7 +59,7 @@ export default function ForgotPasswordPage() {
           {!emailSent ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-left block">Correo electrónico *</Label>
+                <Label className="text-black font-semibold text-left block">{t.email} *</Label>
                 <Input 
                   name="email" 
                   type="email" 
@@ -71,7 +73,7 @@ export default function ForgotPasswordPage() {
                 disabled={isLoading} 
                 className="w-full bg-[#7FFFD4] text-black hover:bg-[#5FD3BC] font-bold transition-all"
               >
-                {isLoading ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <><Mail className="w-4 h-4 mr-2" /> Generar enlace de recuperación</>}
+                {isLoading ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <><Mail className="w-4 h-4 mr-2" /> {t.generateLink || "Generar enlace de recuperación"}</> }
               </Button>
             </form>
           ) : (
@@ -88,11 +90,9 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          <div className="text-center pt-6 mt-4 border-t border-gray-100">
             <Link href="/" className="text-sm text-gray-500 hover:text-black flex items-center justify-center gap-1 transition-colors">
-              <ArrowLeft className="w-4 h-4" /> Volver al inicio de sesión
+              <ArrowLeft className="w-4 h-4" /> {t.backToLogin || "Volver al inicio de sesión"}
             </Link>
-          </div>
         </CardContent>
       </Card>
     </div>

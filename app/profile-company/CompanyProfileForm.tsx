@@ -9,8 +9,10 @@ import { Textarea } from "../../components/ui/textarea";
 import { Save, Building2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { updateCompany } from "../actions/company";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function CompanyProfileForm({ company }: any) {
+  const { t } = useLanguage();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -71,26 +73,26 @@ export default function CompanyProfileForm({ company }: any) {
       <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
 
         <div className="space-y-1.5">
-          <Label className="font-semibold text-black">Nombre de la Empresa *</Label>
+          <Label className="font-semibold text-black">{t.companyName} *</Label>
           <Input name="name" value={formData.name} onChange={handleChange} required
             className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="font-semibold text-black">NIT *</Label>
+            <Label className="font-semibold text-black">{t.nit} *</Label>
             <Input name="nit" value={formData.nit} onChange={handleChange} required
               className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
           </div>
           <div className="space-y-1.5">
-            <Label className="font-semibold text-black">Ubicación *</Label>
+            <Label className="font-semibold text-black">{t.locationLabel} *</Label>
             <Input name="location" value={formData.location} onChange={handleChange} required
               className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="font-semibold text-black">Core de Negocios *</Label>
+          <Label className="font-semibold text-black">{t.coreBusiness} *</Label>
           <Textarea name="coreBusiness" value={formData.coreBusiness} onChange={handleChange}
             placeholder="Describe el giro principal de tu empresa..."
             className="min-h-[100px] rounded-xl text-black border-gray-200 bg-gray-50" />

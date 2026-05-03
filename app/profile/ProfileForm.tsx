@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "../../context/LanguageContext";
 import { updateProfile } from "../actions/profile";
 import { uploadAvatar } from "../actions/upload-avatar";
 import { Input } from "../../components/ui/input";
@@ -36,7 +37,7 @@ function serializeExperience(list: ExperienceEntry[]): string[] {
   return list.map((e) => [e.role, e.company, e.period, e.description].join(" | "));
 }
 
-function getCompletionMessage(pct: number) {
+function getCompletionMessage(pct: number, t: any) {
   if (pct === 100) return "¡Perfecto! Tu perfil está completo 🎉";
   if (pct >= 80)  return "¡Excelente! Tu perfil está casi completo";
   if (pct >= 50)  return "Buen progreso, sigue completando tu perfil";
@@ -44,6 +45,7 @@ function getCompletionMessage(pct: number) {
 }
 
 export default function ProfileForm({ profile }: any) {
+  const { t } = useLanguage();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -123,7 +125,7 @@ export default function ProfileForm({ profile }: any) {
 
     // Validar tamaño (15MB máx)
     if (file.size > 15 * 1024 * 1024) {
-      toast.error("El archivo no debe superar los 15MB");
+      toast.error(t.fileTooLarge || "El archivo no debe superar los 15MB");
       return;
     }
 
@@ -132,13 +134,13 @@ export default function ProfileForm({ profile }: any) {
     const isText = file.type.startsWith("text/");
 
     if (!isPdf && !isWord && !isText) {
-      toast.error("Formato no soportado. Usa PDF, Word (.docx) o texto.");
+      toast.error(t.unsupportedFormat || "Formato no soportado. Usa PDF, Word (.docx) o texto.");
       return;
     }
 
     setIsProcessingCV(true);
     setCvProcessed(false);
-    toast.info("Analizando tu CV con IA...", { duration: 4000 });
+    toast.info(t.analyzingCV || "Analizando tu CV con IA...", { duration: 4000 });
 
     try {
       // Convertir archivo a base64
@@ -282,7 +284,7 @@ export default function ProfileForm({ profile }: any) {
       }
 
       setCvProcessed(true);
-      toast.success("¡CV procesado! Revisa los datos y guarda los cambios.");
+      toast.success(t.cvProcessed || "¡CV procesado! Revisa los datos y guarda los cambios.");
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error desconocido";
@@ -328,10 +330,10 @@ export default function ProfileForm({ profile }: any) {
     const result = await updateProfile(profile.id, dataToSave);
     setIsLoading(false);
     if (result.success) {
-      toast.success("¡Perfil actualizado con éxito!");
+      toast.success(t.profileUpdated || "¡Perfil actualizado con éxito!");
       router.refresh();
     } else {
-      toast.error("Error al actualizar el perfil.");
+      toast.error(t.updateError || "Error al actualizar el perfil.");
     }
   };
 
@@ -353,14 +355,14 @@ export default function ProfileForm({ profile }: any) {
         </div>
         <div className="space-y-1.5">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 font-medium">Completado del perfil</span>
+            <span className="text-gray-600 font-medium">{t.profileCompletion}</span>
             <span className="font-bold text-black">{completitud}%</span>
           </div>
           <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-[#5FD3BC] to-[#7FFFD4] transition-all duration-1000 rounded-full"
               style={{ width: `${completitud}%` }} />
           </div>
-          <p className="text-xs text-gray-400">{getCompletionMessage(completitud)}</p>
+          <p className="text-xs text-gray-400">{getCompletionMessage(completitud, t)}</p>
         </div>
       </div>
 
@@ -382,12 +384,12 @@ export default function ProfileForm({ profile }: any) {
             </div>
             <div className="flex-1 text-center sm:text-left">
               <p className="font-bold text-black text-sm">
-                {cvProcessed ? "¡CV procesado exitosamente!" : "Autocompletar con CV (IA)"}
+                {cvProcessed ? t.cvSuccess : t.autocompleteCV}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
                 {cvProcessed
-                  ? "Revisa los campos autocompletados y guarda los cambios"
-                  : "Sube tu CV en PDF o Word (.docx) y la IA completará automáticamente tu perfil"}
+                  ? t.reviewCV
+                  : t.uploadCVDesc}
               </p>
             </div>
             <button
@@ -406,11 +408,11 @@ export default function ProfileForm({ profile }: any) {
               } : {}}
             >
               {isProcessingCV ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Procesando...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t.processing}</>
               ) : cvProcessed ? (
-                <><FileText className="w-4 h-4" /> Subir otro CV</>
+                <><FileText className="w-4 h-4" /> {t.uploadAnotherCV}</>
               ) : (
-                <><FileText className="w-4 h-4" /> Subir CV (PDF, Word)</>
+                <><FileText className="w-4 h-4" /> {t.uploadCV}</>
               )}
             </button>
           </div>
@@ -440,51 +442,51 @@ export default function ProfileForm({ profile }: any) {
                 : <Camera className="w-4 h-4 text-white" />}
             </button>
           </div>
-          <p className="text-sm text-gray-500">Foto de Perfil</p>
+          <p className="text-sm text-gray-500">{t.profilePhoto}</p>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
             onChange={handleAvatarChange} />
-          <p className="text-xs text-gray-400">JPG, PNG o WEBP · Máx 5MB</p>
+          <p className="text-xs text-gray-400">{t.photoFormat}</p>
         </div>
 
         {/* ─── INFORMACIÓN PERSONAL ─── */}
         <section className="space-y-4">
-          <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">Información Personal</h3>
+          <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">{t.personalInfo}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="font-semibold text-black">Nombres *</Label>
+              <Label className="font-semibold text-black">{t.firstName} *</Label>
               <Input name="firstName" value={formData.firstName} onChange={handleChange} required
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
             <div className="space-y-1.5">
-              <Label className="font-semibold text-black">Apellidos *</Label>
+              <Label className="font-semibold text-black">{t.lastName} *</Label>
               <Input name="lastName" value={formData.lastName} onChange={handleChange} required
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
             <div className="space-y-1.5">
-              <Label className="font-semibold text-black">Fecha de Nacimiento *</Label>
+              <Label className="font-semibold text-black">{t.birthDate} *</Label>
               <Input name="birthDate" type="date" value={formData.birthDate} onChange={handleChange}
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
             <div className="space-y-1.5">
-              <Label className="font-semibold text-black">Teléfono *</Label>
+              <Label className="font-semibold text-black">{t.phone} *</Label>
               <Input name="phone" type="tel" value={formData.phone} onChange={handleChange}
                 placeholder="+57 300 123 4567"
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
             <div className="space-y-1.5">
-              <Label className="font-semibold text-black">Correo electrónico *</Label>
+              <Label className="font-semibold text-black">{t.email} *</Label>
               <Input value={profile?.user?.email || ""} readOnly
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
             <div className="space-y-1.5">
-              <Label className="font-semibold text-black">Cargo Deseado *</Label>
+              <Label className="font-semibold text-black">{t.desiredRole} *</Label>
               <Input name="desiredRole" value={formData.desiredRole} onChange={handleChange}
                 placeholder="Ej: Desarrollador Backend"
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="font-semibold text-black">Descripción Personal *</Label>
+            <Label className="font-semibold text-black">{t.description} *</Label>
             <Textarea name="description" value={formData.description} onChange={handleChange}
               placeholder="Cuéntanos sobre ti..."
               className="min-h-[100px] rounded-xl text-black border-gray-200 bg-gray-50" />
@@ -493,8 +495,8 @@ export default function ProfileForm({ profile }: any) {
 
         {/* ─── HABILIDADES ─── */}
         <section className="space-y-2">
-          <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">Habilidades</h3>
-          <Label className="text-sm text-gray-500">Una por línea</Label>
+          <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">{t.skills}</h3>
+          <Label className="text-sm text-gray-500">{t.onePerLine}</Label>
           <Textarea name="skills" value={formData.skills} onChange={handleChange}
             className="min-h-[120px] rounded-xl text-black border-gray-200 bg-gray-50" />
         </section>
@@ -502,11 +504,11 @@ export default function ProfileForm({ profile }: any) {
         {/* ─── EDUCACIÓN ─── */}
         <section className="space-y-4">
           <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-            <h3 className="text-lg font-bold text-black">Educación</h3>
+            <h3 className="text-lg font-bold text-black">{t.education}</h3>
             <button type="button" onClick={addEducation}
               style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
               className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-black hover:opacity-90">
-              <Plus className="w-4 h-4" /> Agregar
+              <Plus className="w-4 h-4" /> {t.add}
             </button>
           </div>
           {educationList.map((edu, i) => (
@@ -515,28 +517,28 @@ export default function ProfileForm({ profile }: any) {
                 className="absolute top-3 right-3 text-gray-300 hover:text-red-400 transition-colors">
                 <Trash2 className="w-4 h-4" />
               </button>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Educación</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">{t.education}</p>
               <Input value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)}
-                placeholder="Título / Carrera" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                placeholder={t.degree} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
               <Input value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)}
-                placeholder="Institución" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                placeholder={t.institution} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
               <Input value={edu.year} onChange={(e) => updateEducation(i, "year", e.target.value)}
-                placeholder="Año (Ej: 2019-2023)" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                placeholder={t.year} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
             </div>
           ))}
           {educationList.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">No hay entradas de educación. Haz clic en Agregar.</p>
+            <p className="text-sm text-gray-400 text-center py-4">{t.noEducation}</p>
           )}
         </section>
 
         {/* ─── EXPERIENCIA LABORAL ─── */}
         <section className="space-y-4">
           <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-            <h3 className="text-lg font-bold text-black">Experiencia Laboral</h3>
+            <h3 className="text-lg font-bold text-black">{t.workExperience}</h3>
             <button type="button" onClick={addExperience}
               style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
               className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-black hover:opacity-90">
-              <Plus className="w-4 h-4" /> Agregar
+              <Plus className="w-4 h-4" /> {t.add}
             </button>
           </div>
           {experienceList.map((exp, i) => (
@@ -545,20 +547,20 @@ export default function ProfileForm({ profile }: any) {
                 className="absolute top-3 right-3 text-gray-300 hover:text-red-400 transition-colors">
                 <Trash2 className="w-4 h-4" />
               </button>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Experiencia</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">{t.experience}</p>
               <Input value={exp.role} onChange={(e) => updateExperience(i, "role", e.target.value)}
-                placeholder="Cargo" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                placeholder={t.role} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
               <Input value={exp.company} onChange={(e) => updateExperience(i, "company", e.target.value)}
-                placeholder="Empresa" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                placeholder={t.company} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
               <Input value={exp.period} onChange={(e) => updateExperience(i, "period", e.target.value)}
-                placeholder="Período (Ej: 2020-2024)" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                placeholder={t.period} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
               <Textarea value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)}
-                placeholder="Descripción de responsabilidades..."
+                placeholder={t.responsibilities}
                 className="min-h-[80px] rounded-lg text-black border-gray-200 bg-white" />
             </div>
           ))}
           {experienceList.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">No hay entradas de experiencia. Haz clic en Agregar.</p>
+            <p className="text-sm text-gray-400 text-center py-4">{t.noExperience}</p>
           )}
         </section>
 
@@ -568,12 +570,12 @@ export default function ProfileForm({ profile }: any) {
             style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
             className="flex-1 h-12 rounded-xl font-bold text-black hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-60">
             {isLoading
-              ? <><Loader2 className="w-5 h-5 animate-spin" /> Guardando...</>
-              : <><Save className="w-5 h-5" /> Guardar Cambios</>}
+              ? <><Loader2 className="w-5 h-5 animate-spin" /> {t.saving}</>
+              : <><Save className="w-5 h-5" /> {t.saveChanges}</>}
           </button>
           <button type="button" onClick={() => window.history.back()}
             className="flex-1 h-12 rounded-xl font-bold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">
-            Cancelar
+            {t.cancel}
           </button>
         </div>
       </form>

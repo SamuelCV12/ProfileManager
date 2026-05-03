@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "../../context/LanguageContext";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
@@ -15,6 +16,7 @@ type EducationEntry  = { degree: string; institution: string; year: string };
 type ExperienceEntry = { role: string; company: string; period: string; description: string };
 
 export default function RegisterPage() {
+  const { t } = useLanguage();
   const [isLoading,      setIsLoading]      = useState(false);
   const [isProcessingCV, setIsProcessingCV] = useState(false);
   const [cvProcessed,    setCvProcessed]    = useState(false);
@@ -63,7 +65,7 @@ export default function RegisterPage() {
     if (!file) return;
 
     if (file.size > 15 * 1024 * 1024) {
-      toast.error("El archivo no debe superar los 15MB");
+      toast.error(t.fileTooLarge || "El archivo no debe superar los 15MB");
       return;
     }
 
@@ -72,13 +74,13 @@ export default function RegisterPage() {
     const isText = file.type.startsWith("text/");
 
     if (!isPdf && !isWord && !isText) {
-      toast.error("Formato no soportado. Usa PDF, Word (.docx) o texto.");
+      toast.error(t.unsupportedFormat || "Formato no soportado. Usa PDF, Word (.docx) o texto.");
       return;
     }
 
     setIsProcessingCV(true);
     setCvProcessed(false);
-    toast.info("Analizando tu CV con IA...", { duration: 4000 });
+    toast.info(t.analyzingCV || "Analizando tu CV con IA...", { duration: 4000 });
 
     try {
       // Convertir a base64
