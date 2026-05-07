@@ -31,10 +31,10 @@ export default function ForgotPasswordPage() {
         toast.error(result.error);
       } else {
         setEmailSent(true);
-        toast.success(t.checkVSCode || "¡Revisa tu terminal de VS Code!");
+        toast.success(t.checkVSCode);
       }
-    } catch (err) {
-      toast.error("Ocurrió un error de conexión.");
+    } catch {
+      toast.error(t.connectionError);
     } finally {
       setIsLoading(false);
     }
@@ -47,11 +47,11 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto w-12 h-12 bg-[#7FFFD4]/20 rounded-full flex items-center justify-center mb-4">
             <KeyRound className="w-6 h-6 text-[#5FD3BC]" />
           </div>
-          <CardTitle className="text-2xl font-bold text-black">{t.recoverAccount}</CardTitle>
+          <CardTitle className="text-2xl font-bold text-black">{t.recoverAccountTitle}</CardTitle>
           <p className="text-sm text-gray-500 mt-2">
             {!emailSent 
-              ? (t.enterEmailForReset || "Ingresa tu correo electrónico y te enviaremos un enlace seguro.")
-              : (t.checkVSCodeLink || "Revisa la terminal de VS Code para ver el enlace secreto.")}
+              ? t.enterEmailForReset
+              : t.checkVSCodeLink}
           </p>
         </CardHeader>
         
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
                 <Input 
                   name="email" 
                   type="email" 
-                  placeholder="Ej: tu@email.com" 
+                  placeholder={t.emailPlaceholder} 
                   required 
                   className="bg-gray-50 border-gray-300 text-black" 
                 />
@@ -73,25 +73,25 @@ export default function ForgotPasswordPage() {
                 disabled={isLoading} 
                 className="w-full bg-[#7FFFD4] text-black hover:bg-[#5FD3BC] font-bold transition-all"
               >
-                {isLoading ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <><Mail className="w-4 h-4 mr-2" /> {t.generateLink || "Generar enlace de recuperación"}</> }
+                {isLoading ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <><Mail className="w-4 h-4 mr-2" /> {t.generateLink}</> }
               </Button>
             </form>
           ) : (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
               <p className="text-green-800 text-sm font-semibold mb-4">
-                ¡Enlace generado exitosamente! Míralo en VS Code.
+                {t.linkGeneratedSuccess}
               </p>
-              <Button 
-               variant="outline" // O quita el variant si usas uno personalizado
+              <Button
+               variant="outline"
                className="w-full h-11 bg-[#7FFFD4] text-black font-bold hover:bg-[#5FD3BC] border-none transition-all rounded-lg shadow-sm"
               >
-               Intentar con otro correo
+               {t.tryAnotherEmail}
               </Button>
             </div>
           )}
 
             <Link href="/" className="text-sm text-gray-500 hover:text-black flex items-center justify-center gap-1 transition-colors">
-              <ArrowLeft className="w-4 h-4" /> {t.backToLogin || "Volver al inicio de sesión"}
+              <ArrowLeft className="w-4 h-4" /> {t.backToLoginBtn}
             </Link>
         </CardContent>
       </Card>

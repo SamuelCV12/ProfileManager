@@ -15,9 +15,11 @@ import { LogOut } from "lucide-react";
 import { logoutUser } from "../../app/actions/auth";
 import { Button } from "./button";
 import { broadcast } from "@/lib/tab-sync";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function LogoutButton() { 
-const router = useRouter(); // Inicializamos el hook useRouter para poder redirigir al usuario después de cerrar sesión
+const router = useRouter();
+const { t } = useLanguage();
 const handleLogout = async () => {
     await logoutUser();
     broadcast('LOGOUT');
@@ -26,11 +28,11 @@ const handleLogout = async () => {
 
 return (
     <Button
-    variant="outline" // Usamos el estilo "outline" para que el botón tenga un diseño más ligero y se integre bien en el header
-    onClick={handleLogout} // Asignamos la función handleLogout al evento onClick del botón
-    className="h-9 border-black/20 text-black font-semibold rounded-xl hover:bg-white/50 gap-2" // Agregamos clases para mejorar la apariencia del botón, incluyendo un hover effect y un ícono de logout
+    variant="outline"
+    onClick={handleLogout}
+    className="h-9 border-black/20 text-black font-semibold rounded-xl hover:bg-white/50 gap-2"
     >
-    <LogOut className="w-4 h-4" /> Cerrar Sesión 
+    <LogOut className="w-4 h-4" /> {t.logout}
     </Button>
 );
 }

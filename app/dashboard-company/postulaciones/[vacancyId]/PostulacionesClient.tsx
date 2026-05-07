@@ -37,12 +37,14 @@ interface Postulacion {
 
 // ─── config ───────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; pill: string; select: string }> = {
-  POSTULADO:   { label: "Postulado",           pill: "bg-blue-50 text-blue-700 border-blue-200",     select: "text-blue-700" },
-  EN_REVISION: { label: "En Revisión",         pill: "bg-yellow-50 text-yellow-700 border-yellow-200", select: "text-yellow-700" },
-  ENTREVISTA:  { label: "Entrevista Agendada", pill: "bg-purple-50 text-purple-700 border-purple-200", select: "text-purple-700" },
-  RECHAZADO:   { label: "Rechazado",           pill: "bg-red-50 text-red-700 border-red-200",         select: "text-red-500" },
-};
+function getStatusConfig(t: any): Record<string, { label: string; pill: string; select: string }> {
+  return {
+    POSTULADO:   { label: t.statusPosted,           pill: "bg-blue-50 text-blue-700 border-blue-200",     select: "text-blue-700" },
+    EN_REVISION: { label: t.statusInReview,         pill: "bg-yellow-50 text-yellow-700 border-yellow-200", select: "text-yellow-700" },
+    ENTREVISTA:  { label: t.statusInterview,        pill: "bg-purple-50 text-purple-700 border-purple-200", select: "text-purple-700" },
+    RECHAZADO:   { label: t.statusRejected,         pill: "bg-red-50 text-red-700 border-red-200",         select: "text-red-500" },
+  };
+}
 
 function parseField(raw: string): string {
   if (!raw || !raw.includes(" | ")) return raw || "—";
@@ -66,6 +68,7 @@ export default function PostulacionesClient({
   postulaciones: Postulacion[];
 }) {
   const { t } = useLanguage();
+  const statusConfig = getStatusConfig(t);
   const [postulaciones, setPostulaciones] = useState<Postulacion[]>(postulacionesIniciales);
 
   // filtros
@@ -75,8 +78,7 @@ export default function PostulacionesClient({
   const [mostrarFiltros, setMostrarFiltros]   = useState(false);
 
   // modal candidato
-  const [candidatoModal, setCandidatoModal]       = useState<Candidato | null>(null);
-  const [mostrarModalCandidato, setMostrarModalCandidato] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidato | null>(null);
 
   // habilidades únicas para el filtro
   const habilidadesUnicas = Array.from(
@@ -97,14 +99,14 @@ export default function PostulacionesClient({
   const handleCambiarEstado = async (applicationId: string, nuevoEstado: string) => {
     const result = await updateApplicationStatus(applicationId, nuevoEstado);
     if (result.error) { toast.error(result.error); return; }
-    toast.success("Estado actualizado.");
+    toast.success(t.statusUpdated);
     setPostulaciones(prev =>
       prev.map(p => p.id === applicationId ? { ...p, status: nuevoEstado } : p)
     );
   };
 
   // resumen por estado
-  const resumen = Object.entries(STATUS_CONFIG).map(([key, cfg]) => ({
+  const resumen = Object.entries(statusConfig).map(([key, cfg]) => ({
     key, label: cfg.label, pill: cfg.pill,
     count: postulaciones.filter(p => p.status === key).length,
   })).filter(r => r.count > 0);
@@ -120,9 +122,11 @@ export default function PostulacionesClient({
         <h2 className="text-2xl font-black text-black tracking-tight">ProfileManager</h2>
         <div className="flex items-center gap-3">
           <LanguageSelector />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 uppercase">
-            {companyInitials}
-          </div>
+          <Link href="/profile-company" className="transition-transform hover:scale-110">
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-black border border-gray-100 uppercase cursor-pointer">
+              {companyInitials}
+            </div>
+          </Link>
           <LogoutButton />
         </div>
       </header>
@@ -152,7 +156,7 @@ export default function PostulacionesClient({
                   </span>
                 )}
                 <span className="flex items-center gap-1.5 bg-[#7FFFD4]/20 px-3 py-1.5 rounded-lg font-semibold text-[#1a7a65]">
-                  {postulaciones.length} postulacion{postulaciones.length !== 1 ? "es" : ""}
+                  {postulaciones.length} {t.postings}
                 </span>
               </div>
             </div>
@@ -205,7 +209,7 @@ export default function PostulacionesClient({
             className={`h-12 border-gray-200 rounded-xl px-5 font-semibold gap-2 transition-all ${mostrarFiltros ? "bg-black text-white border-black" : "text-gray-700 bg-white"}`}
           >
             <SlidersHorizontal className="w-4 h-4" />
-            Filtros
+            {t.filters}
             <ChevronDown className={`w-3 h-3 transition-transform ${mostrarFiltros ? "rotate-180" : ""}`} />
           </Button>
         </div>
@@ -216,27 +220,27 @@ export default function PostulacionesClient({
             <CardContent className="pt-5 pb-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label className="text-black font-semibold text-sm">Estado de postulación</Label>
+                  <Label className="text-black font-semibold text-sm">{t.statusFilter}</Label>
                   <Select value={filtroEstado} onValueChange={setFiltroEstado}>
                     <SelectTrigger className="border-gray-200 h-11 bg-white text-black rounded-xl">
-                      <SelectValue placeholder="Todos los estados" />
+                      <SelectValue placeholder={t.allStates} />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      <SelectItem value="todos">Todos los estados</SelectItem>
-                      {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                      <SelectItem value="todos">{t.allStates}</SelectItem>
+                      {Object.entries(statusConfig).map(([key, cfg]) => (
                         <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-black font-semibold text-sm">Habilidad del candidato</Label>
+                  <Label className="text-black font-semibold text-sm">{t.skillFilter}</Label>
                   <Select value={filtroHabilidad} onValueChange={setFiltroHabilidad}>
                     <SelectTrigger className="border-gray-200 h-11 bg-white text-black rounded-xl">
-                      <SelectValue placeholder="Todas las habilidades" />
+                      <SelectValue placeholder={t.allSkills} />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      <SelectItem value="todas">Todas las habilidades</SelectItem>
+                      <SelectItem value="todas">{t.allSkills}</SelectItem>
                       {habilidadesUnicas.map(h => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
@@ -248,7 +252,7 @@ export default function PostulacionesClient({
                 <div className="mt-4 flex justify-end">
                   <Button variant="ghost" onClick={() => { setFiltroEstado("todos"); setFiltroHabilidad("todas"); setBusqueda(""); }}
                     className="text-gray-400 hover:text-gray-700 text-sm h-8 gap-1">
-                    <X className="w-3 h-3" /> Limpiar filtros
+                    <X className="w-3 h-3" /> {t.clearFilters}
                   </Button>
                 </div>
               )}
@@ -261,14 +265,14 @@ export default function PostulacionesClient({
           <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
             <p className="text-gray-400 font-medium">
               {postulaciones.length === 0
-                ? "Aún no hay postulaciones para este cargo."
-                : "Ningún candidato coincide con los filtros aplicados."}
+                ? t.noApplications
+                : t.noResults}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {postulacionesFiltradas.map((p, idx) => {
-              const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG["POSTULADO"];
+              const cfg = statusConfig[p.status] ?? statusConfig["POSTULADO"];
               const c = p.candidato;
               const matchingSkills = c.habilidades.filter(h => vacancyMustHave.includes(h));
               const matchPct = vacancyMustHave.length > 0
@@ -324,7 +328,7 @@ export default function PostulacionesClient({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
-                        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                        {Object.entries(statusConfig).map(([key, cfg]) => (
                           <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
                         ))}
                       </SelectContent>
@@ -335,16 +339,16 @@ export default function PostulacionesClient({
                         variant="outline"
                         size="sm"
                         className="border-gray-200 text-gray-600 rounded-xl h-9 text-xs"
-                        onClick={() => { setCandidatoModal(c); setMostrarModalCandidato(true); }}
+                        onClick={() => setSelectedCandidate(c)}
                       >
-                        <Eye className="w-3.5 h-3.5 mr-1" /> Perfil
+                        <Eye className="w-3.5 h-3.5 mr-1" /> {t.profile}
                       </Button>
                       <button
                         style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                         className="h-9 rounded-xl font-bold text-black text-xs hover:opacity-90 transition-opacity"
                         onClick={() => window.location.href = `mailto:${c.email}`}
                       >
-                        Contactar
+                        {t.contact}
                       </button>
                     </div>
                   </div>
@@ -356,56 +360,56 @@ export default function PostulacionesClient({
       </div>
 
       {/* MODAL — PERFIL COMPLETO */}
-      <Dialog open={mostrarModalCandidato} onOpenChange={setMostrarModalCandidato}>
+      <Dialog open={!!selectedCandidate} onOpenChange={(open) => !open && setSelectedCandidate(null)}>
         <DialogContent className="max-w-md bg-white text-black border-none rounded-3xl p-0 overflow-hidden shadow-2xl">
-          {candidatoModal && (
+          {selectedCandidate && (
             <div className="flex flex-col">
               <div className="h-20 bg-gradient-to-r from-[#7FFFD4] to-[#98FF98]" />
               <div className="px-6 pb-6">
                 <div className="flex justify-between items-end -mt-8 mb-4">
                   <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-lg">
                     <div className="w-full h-full rounded-xl bg-gray-50 flex items-center justify-center text-2xl font-black text-gray-300">
-                      {initials(candidatoModal.nombre)}
+                      {initials(selectedCandidate.nombre)}
                     </div>
                   </div>
                 </div>
 
                 <DialogHeader className="text-left mb-6">
-                  <DialogTitle className="text-2xl font-black text-black">{candidatoModal.nombre}</DialogTitle>
-                  <DialogDescription className="text-[#1a7a65] font-bold text-sm uppercase tracking-wider">{candidatoModal.cargo}</DialogDescription>
+                  <DialogTitle className="text-2xl font-black text-black">{selectedCandidate.nombre}</DialogTitle>
+                  <DialogDescription className="text-[#1a7a65] font-bold text-sm uppercase tracking-wider">{selectedCandidate.cargo}</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div className="flex items-center gap-3 text-gray-600">
                       <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center"><Mail className="w-4 h-4 text-gray-400" /></div>
-                      {candidatoModal.email}
+                      {selectedCandidate.email}
                     </div>
                     <div className="flex items-center gap-3 text-gray-600">
                       <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center"><Phone className="w-4 h-4 text-gray-400" /></div>
-                      {candidatoModal.telefono}
+                      {selectedCandidate.telefono}
                     </div>
                   </div>
 
                   <div className="space-y-4 border-t pt-5">
                     <div>
                       <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest flex items-center gap-2">
-                        <Briefcase className="w-3 h-3" /> Resumen
+                        <Briefcase className="w-3 h-3" /> {t.summary}
                       </h4>
-                      <p className="text-sm text-gray-600 leading-relaxed">{candidatoModal.resumen || "Sin descripción."}</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">{selectedCandidate.resumen || t.noDescription}</p>
                     </div>
 
                     <div>
                       <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest flex items-center gap-2">
-                        <GraduationCap className="w-3 h-3" /> Educación
+                        <GraduationCap className="w-3 h-3" /> {t.education}
                       </h4>
-                      <p className="text-sm text-gray-600 font-medium">{parseField(candidatoModal.educacion)}</p>
+                      <p className="text-sm text-gray-600 font-medium">{parseField(selectedCandidate.educacion)}</p>
                     </div>
 
                     <div>
-                      <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Habilidades</h4>
+                      <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">{t.skills}</h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {candidatoModal.habilidades.map((skill, i) => (
+                        {selectedCandidate.habilidades.map((skill, i) => (
                           <Badge key={i} variant="outline" className={`text-[10px] font-bold ${vacancyMustHave.includes(skill) ? 'bg-[#7FFFD4]/20 border-[#5FD3BC] text-[#1a7a65]' : 'bg-white border-gray-100 text-gray-500'}`}>
                             {skill}
                           </Badge>
@@ -417,9 +421,9 @@ export default function PostulacionesClient({
                   <button
                     style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                     className="w-full h-12 rounded-xl font-black text-black hover:scale-[1.02] transition-all shadow-md mt-4"
-                    onClick={() => window.location.href = `mailto:${candidatoModal.email}`}
+                    onClick={() => window.location.href = `mailto:${selectedCandidate.email}`}
                   >
-                    CONTACTAR CANDIDATO
+                    {t.contactCandidate}
                   </button>
                 </div>
               </div>
@@ -428,8 +432,11 @@ export default function PostulacionesClient({
         </DialogContent>
       </Dialog>
 
-      <footer className="w-full py-6 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-auto border-t border-gray-100">
-        © 2026 ProfileManager · Sistemas EAFIT
+      <footer
+        style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8"
+      >
+        {t.allRightsReserved}
       </footer>
     </div>
   );

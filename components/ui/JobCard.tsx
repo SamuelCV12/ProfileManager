@@ -53,10 +53,8 @@ export function JobCard({
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2 flex-wrap">
           {esVacante ? (
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-              isUrgent ? "bg-red-100 text-red-600" : "bg-[#7FFFD4]/30 text-[#2D8A75]"
-            }`}>
-              {isUrgent ? t.urgent : t.open}
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#7FFFD4]/30 text-[#2D8A75]">
+              {t.open}
             </span>
           ) : (
             <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig?.color || "bg-gray-100 text-gray-600"}`}>

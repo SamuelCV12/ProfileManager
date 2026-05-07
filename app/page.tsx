@@ -29,7 +29,7 @@ export default function LoginPage() {
     setIsLoading(false);
     if (result.error) { toast.error(result.error); return; }
     if (result.success) {
-      toast.success("¡Inicio de sesión exitoso!");
+      toast.success(t.loginSuccess);
       router.refresh(); // Revalida server data
       await new Promise(r => setTimeout(r, 500)); // Delay para hydration
       broadcast('LOGIN');
@@ -83,7 +83,7 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-black">{t.email}</Label>
-                <Input id="email" type="email" placeholder="tu@email.com" value={email}
+                <Input id="email" type="email" placeholder={t.emailPlaceholder} value={email}
                   onChange={(e) => setEmail(e.target.value)} required className="border-gray-300 text-black bg-gray-50" />
               </div>
 

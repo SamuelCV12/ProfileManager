@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Plus, Edit2, Ban, Trash2, CheckCircle } from "lucide-react";
+import { Search, Plus, Edit2, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -81,7 +81,7 @@ export default function ClientDashboard({
 
   const handleGuardarVacante = async () => {
     if (!nuevaVacante.title || !nuevaVacante.description) {
-      toast.error("El título y la descripción son obligatorios.");
+      toast.error(t.titleAndDescriptionRequired);
       return;
     }
     setLoadingVacante(true);
@@ -105,12 +105,12 @@ export default function ClientDashboard({
       if (result?.error) { 
         toast.error(result.error); 
       } else {
-        toast.success(modoEdicion ? "Cargo actualizado." : "¡Cargo publicado!");
+        toast.success(modoEdicion ? t.cargoUpdated : t.cargoPublished);
         setMostrarModalVacante(false);
         window.location.reload();
       }
     } catch (error) {
-      toast.error("Error de conexión con el servidor.");
+      toast.error(t.connectionError);
     } finally {
       setLoadingVacante(false);
     }
@@ -190,10 +190,10 @@ export default function ClientDashboard({
               </div>
 
               <div className="grid grid-cols-3 gap-2 bg-gray-50 rounded-xl p-3 mb-4 text-xs">
-                <div><span className="text-gray-400 block uppercase text-[10px] mb-1 font-bold">Ubicación</span><span className="font-semibold">{cargo.ubicacion}</span></div>
-                <div><span className="text-gray-400 block uppercase text-[10px] mb-1 font-bold">Modalidad</span><span className="font-semibold">{cargo.modalidad}</span></div>
+                <div><span className="text-gray-400 block uppercase text-[10px] mb-1 font-bold">{t.locationLabel}</span><span className="font-semibold">{cargo.ubicacion}</span></div>
+                <div><span className="text-gray-400 block uppercase text-[10px] mb-1 font-bold">{t.modalityLabel}</span><span className="font-semibold">{cargo.modalidad}</span></div>
                 <div>
-                  <span className="text-gray-400 block uppercase text-[10px] mb-1 font-bold">Salario</span>
+                  <span className="text-gray-400 block uppercase text-[10px] mb-1 font-bold">{t.salaryLabel}</span>
                   <span className="font-semibold truncate block">
                     {cargo.salaryRange ? `$${cargo.salaryRange.toLocaleString('es-CO')}` : "N/A"}
                   </span>
@@ -221,11 +221,11 @@ export default function ClientDashboard({
           <div className="space-y-5 mt-4">
             <div className="space-y-2">
               <Label className="font-bold">{t.jobTitle} *</Label>
-              <Input placeholder="Ej: Gerente de proyecto" value={nuevaVacante.title} onChange={e => setNuevaVacante(p => ({ ...p, title: e.target.value }))} className="rounded-xl h-11 border-gray-200" />
+              <Input placeholder={t.jobTitlePlaceholder} value={nuevaVacante.title} onChange={e => setNuevaVacante(p => ({ ...p, title: e.target.value }))} className="rounded-xl h-11 border-gray-200" />
             </div>
             <div className="space-y-2">
               <Label className="font-bold">{t.jobDesc} *</Label>
-              <Input placeholder="Descripción breve" value={nuevaVacante.description} onChange={e => setNuevaVacante(p => ({ ...p, description: e.target.value }))} className="rounded-xl h-11 border-gray-200" />
+              <Input placeholder={t.jobDescPlaceholder} value={nuevaVacante.description} onChange={e => setNuevaVacante(p => ({ ...p, description: e.target.value }))} className="rounded-xl h-11 border-gray-200" />
             </div>
             <div className="space-y-2">
               <Label className="font-bold">{t.modality}</Label>
@@ -242,7 +242,7 @@ export default function ClientDashboard({
               <Label className="font-bold">{t.budget} *</Label>
               <Input 
                 type="number" 
-                placeholder="Ej: 5000000" 
+                placeholder={t.budgetPlaceholder} 
                 value={nuevaVacante.salaryRange} 
                 onChange={e => setNuevaVacante(p => ({ ...p, salaryRange: e.target.value }))} 
                 className="rounded-xl h-11 border-gray-200" 
@@ -251,7 +251,7 @@ export default function ClientDashboard({
             </div>
             <div className="space-y-2">
               <Label className="font-bold">{t.requiredSkills}</Label>
-              <Input placeholder="Ej: Scrum, Agile" value={nuevaVacante.mustHave} onChange={e => setNuevaVacante(p => ({ ...p, mustHave: e.target.value }))} className="rounded-xl h-11 border-gray-200" />
+              <Input placeholder={t.skillsPlaceholder} value={nuevaVacante.mustHave} onChange={e => setNuevaVacante(p => ({ ...p, mustHave: e.target.value }))} className="rounded-xl h-11 border-gray-200" />
             </div>
             <button 
               onClick={handleGuardarVacante} 
@@ -266,7 +266,7 @@ export default function ClientDashboard({
       </Dialog>
 
       <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }} className="w-full py-4 text-center text-sm font-bold mt-auto border-t border-black/5">
-        {t.footer}
+        {t.allRightsReserved}
       </footer>
     </div>
   );

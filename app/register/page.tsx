@@ -151,11 +151,11 @@ export default function RegisterPage() {
       }
 
       setCvProcessed(true);
-      toast.success("¡CV procesado! Revisa los datos y completa el formulario.");
+      toast.success(t.cvProcessedSuccess);
 
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error desconocido";
-      toast.error(`Error al procesar el CV: ${msg}`);
+      const msg = err instanceof Error ? err.message : t.unknownError;
+      toast.error(t.cvProcessErrorMsg.replace("{error}", msg));
     } finally {
       setIsProcessingCV(false);
       if (cvInputRef.current) cvInputRef.current.value = "";
@@ -195,7 +195,7 @@ export default function RegisterPage() {
     const result = await registerUser(data);
     setIsLoading(false);
     if (result.error) { toast.error(result.error); }
-    else { toast.success("¡Cuenta creada exitosamente!"); router.push("/"); }
+    else { toast.success(t.accountCreated); router.push("/"); }
   };
 
   return (
@@ -210,10 +210,10 @@ export default function RegisterPage() {
         <div className="max-w-3xl mx-auto bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-8 pt-8 pb-4">
             <Link href="/" className="flex items-center text-sm text-gray-500 hover:text-black mb-6 transition-colors">
-              <ArrowLeft className="w-4 h-4 mr-1" /> Volver al login
+              <ArrowLeft className="w-4 h-4 mr-1" /> {t.backToLogin}
             </Link>
-            <h1 className="text-3xl font-bold text-black">Crear Cuenta</h1>
-            <p className="text-gray-600 mt-1">Completa el formulario para registrarte en nuestro portal</p>
+            <h1 className="text-3xl font-bold text-black">{t.createAccount}</h1>
+            <p className="text-gray-600 mt-1">{t.registerDesc}</p>
           </div>
 
           <div className="px-8 pb-8 space-y-8">
@@ -232,12 +232,10 @@ export default function RegisterPage() {
                 </div>
                 <div className="flex-1 text-center sm:text-left">
                   <p className="font-bold text-black text-sm">
-                    {cvProcessed ? "¡CV procesado! Revisa los campos autocompletados" : "Autocompletar con CV (Opcional)"}
+                    {cvProcessed ? t.cvProcessed : t.autoFillCV}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {cvProcessed
-                      ? "Puedes editar cualquier campo antes de crear tu cuenta"
-                      : "Sube tu CV en PDF o Word y la IA completará el formulario automáticamente"}
+                    {cvProcessed ? t.cvProcessedDesc : t.autoFillCVDesc}
                   </p>
                 </div>
                 <button
@@ -256,10 +254,10 @@ export default function RegisterPage() {
                   } : {}}
                 >
                   {isProcessingCV
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Procesando...</>
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {t.processingCV}</>
                     : cvProcessed
-                    ? <><FileText className="w-4 h-4" /> Subir otro CV</>
-                    : <><FileText className="w-4 h-4" /> Subir CV (PDF, Word)</>}
+                    ? <><FileText className="w-4 h-4" /> {t.uploadAnotherCV}</>
+                    : <><FileText className="w-4 h-4" /> {t.uploadCVButton}</>}
                 </button>
               </div>
               <input
@@ -276,7 +274,7 @@ export default function RegisterPage() {
               {/* FOTO DE PERFIL */}
               <div className="space-y-3">
                 <Label className="text-black font-bold flex items-center gap-2">
-                  <User className="w-4 h-4" /> Foto de Perfil (Opcional)
+                  <User className="w-4 h-4" /> {t.profilePhoto}
                 </Label>
                 <div className="flex items-center gap-4">
                   <div onClick={() => avatarInputRef.current?.click()}
@@ -289,69 +287,69 @@ export default function RegisterPage() {
                     <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                     <button type="button" onClick={() => avatarInputRef.current?.click()}
                       className="text-sm border border-gray-300 rounded-lg px-4 py-2 text-gray-600 hover:border-[#5FD3BC] transition-colors">
-                      {avatarPreview ? "Cambiar foto" : "Elegir archivo"}
+                      {avatarPreview ? t.changePhoto : t.chooseFile}
                     </button>
                     {avatarPreview && (
                       <button type="button" onClick={() => { setAvatarPreview(null); setAvatarFile(null); }}
-                        className="ml-2 text-sm text-red-400 hover:text-red-600">Eliminar</button>
+                        className="ml-2 text-sm text-red-400 hover:text-red-600">{t.removePhoto}</button>
                     )}
-                    <p className="text-xs text-gray-400 mt-1">JPG, PNG o WEBP · Máx 5MB</p>
+                    <p className="text-xs text-gray-400 mt-1">{t.photoHint}</p>
                   </div>
                 </div>
               </div>
 
               {/* INFORMACIÓN PERSONAL */}
               <div className="space-y-4">
-                <h3 className="text-xl font-bold text-black border-b pb-2">Información Personal</h3>
+                <h3 className="text-xl font-bold text-black border-b pb-2">{t.personalInfo}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-black font-semibold">Nombres *</Label>
+                    <Label className="text-black font-semibold">{t.names}</Label>
                     <Input value={firstName} onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Ej: Juan Carlos" required className="bg-gray-50 border-gray-300 text-black" />
+                      placeholder={t.namesPlaceholder} required className="bg-gray-50 border-gray-300 text-black" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-black font-semibold">Apellidos *</Label>
+                    <Label className="text-black font-semibold">{t.surnames}</Label>
                     <Input value={lastName} onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Ej: García López" required className="bg-gray-50 border-gray-300 text-black" />
+                      placeholder={t.surnamePlaceholder} required className="bg-gray-50 border-gray-300 text-black" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-black font-semibold">Fecha de Nacimiento *</Label>
+                    <Label className="text-black font-semibold">{t.birthDate}</Label>
                     <Input name="birthDate" type="date" required className="bg-gray-50 border-gray-300 text-black" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-black font-semibold">Descripción Personal (Opcional)</Label>
+                  <Label className="text-black font-semibold">{t.personalDescription}</Label>
                   <Textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Escribe una breve descripción de ti mismo"
+                    placeholder={t.personalDescriptionPlaceholder}
                     className="min-h-[100px] text-black bg-gray-50 border-gray-300" />
                 </div>
               </div>
 
               {/* CARGO DESEADO */}
               <div className="space-y-2">
-                <Label className="text-black font-semibold">Cargo Deseado *</Label>
+                <Label className="text-black font-semibold">{t.desiredRole}</Label>
                 <Input value={desiredRole} onChange={(e) => setDesiredRole(e.target.value)}
-                  name="desiredRole" placeholder="Ej: Desarrollador Backend" required
+                  name="desiredRole" placeholder={t.desiredRolePlaceholder} required
                   className="bg-gray-50 border-gray-300 text-black" />
               </div>
 
               {/* HABILIDADES */}
               <div className="space-y-2">
-                <Label className="text-black font-semibold">Habilidades (Opcional)</Label>
-                <p className="text-xs text-gray-400">Una por línea</p>
+                <Label className="text-black font-semibold">{t.skills}</Label>
+                <p className="text-xs text-gray-400">{t.skillsHint}</p>
                 <Textarea value={skills} onChange={(e) => setSkills(e.target.value)}
-                  placeholder="React&#10;Node.js&#10;TypeScript"
+                  placeholder={t.skillsPlaceholder}
                   className="min-h-[100px] text-black bg-gray-50 border-gray-300" />
               </div>
 
               {/* EDUCACIÓN */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="text-xl font-bold text-black">Educación (Opcional)</h3>
+                  <h3 className="text-xl font-bold text-black">{t.education}</h3>
                   <button type="button" onClick={addEducation}
                     style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                     className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-black hover:opacity-90">
-                    <Plus className="w-4 h-4" /> Agregar
+                    <Plus className="w-4 h-4" /> {t.addEducation}
                   </button>
                 </div>
                 {educationList.map((edu, i) => (
@@ -359,25 +357,25 @@ export default function RegisterPage() {
                     <button type="button" onClick={() => removeEducation(i)} className="absolute top-3 right-3 text-gray-300 hover:text-red-400">
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    <p className="text-xs font-bold text-gray-400 uppercase">Educación</p>
-                    <Input value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)} placeholder="Título / Carrera" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
-                    <Input value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)} placeholder="Institución" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
-                    <Input value={edu.year} onChange={(e) => updateEducation(i, "year", e.target.value)} placeholder="Año (Ej: 2019-2023)" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                    <p className="text-xs font-bold text-gray-400 uppercase">{t.education}</p>
+                    <Input value={edu.degree} onChange={(e) => updateEducation(i, "degree", e.target.value)} placeholder={t.degree} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                    <Input value={edu.institution} onChange={(e) => updateEducation(i, "institution", e.target.value)} placeholder={t.institution} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                    <Input value={edu.year} onChange={(e) => updateEducation(i, "year", e.target.value)} placeholder={t.year} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
                   </div>
                 ))}
                 {educationList.length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-2">No hay entradas. Sube tu CV o haz clic en Agregar.</p>
+                  <p className="text-sm text-gray-400 text-center py-2">{t.noEducationEntries}</p>
                 )}
               </div>
 
               {/* EXPERIENCIA */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="text-xl font-bold text-black">Experiencia Laboral (Opcional)</h3>
+                  <h3 className="text-xl font-bold text-black">{t.experience}</h3>
                   <button type="button" onClick={addExperience}
                     style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                     className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-bold text-black hover:opacity-90">
-                    <Plus className="w-4 h-4" /> Agregar
+                    <Plus className="w-4 h-4" /> {t.addExperience}
                   </button>
                 </div>
                 {experienceList.map((exp, i) => (
@@ -385,29 +383,29 @@ export default function RegisterPage() {
                     <button type="button" onClick={() => removeExperience(i)} className="absolute top-3 right-3 text-gray-300 hover:text-red-400">
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    <p className="text-xs font-bold text-gray-400 uppercase">Experiencia</p>
-                    <Input value={exp.role} onChange={(e) => updateExperience(i, "role", e.target.value)} placeholder="Cargo" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
-                    <Input value={exp.company} onChange={(e) => updateExperience(i, "company", e.target.value)} placeholder="Empresa" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
-                    <Input value={exp.period} onChange={(e) => updateExperience(i, "period", e.target.value)} placeholder="Período (Ej: 2020-2024)" className="h-10 rounded-lg text-black border-gray-200 bg-white" />
-                    <Textarea value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)} placeholder="Descripción de responsabilidades..." className="min-h-[80px] rounded-lg text-black border-gray-200 bg-white" />
+                    <p className="text-xs font-bold text-gray-400 uppercase">{t.experience}</p>
+                    <Input value={exp.role} onChange={(e) => updateExperience(i, "role", e.target.value)} placeholder={t.role} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                    <Input value={exp.company} onChange={(e) => updateExperience(i, "company", e.target.value)} placeholder={t.company} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                    <Input value={exp.period} onChange={(e) => updateExperience(i, "period", e.target.value)} placeholder={t.period} className="h-10 rounded-lg text-black border-gray-200 bg-white" />
+                    <Textarea value={exp.description} onChange={(e) => updateExperience(i, "description", e.target.value)} placeholder={t.experienceDescription} className="min-h-[80px] rounded-lg text-black border-gray-200 bg-white" />
                   </div>
                 ))}
                 {experienceList.length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-2">No hay entradas. Sube tu CV o haz clic en Agregar.</p>
+                  <p className="text-sm text-gray-400 text-center py-2">{t.noExperienceEntries}</p>
                 )}
               </div>
 
               {/* CREDENCIALES */}
               <div className="space-y-4">
-                <h3 className="text-xl font-bold text-black border-b pb-2">Credenciales de Acceso</h3>
+                <h3 className="text-xl font-bold text-black border-b pb-2">{t.accessCredentials}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-black font-semibold">Correo electrónico *</Label>
-                    <Input name="email" type="email" placeholder="tu@email.com" required className="bg-gray-50 border-gray-300 text-black" />
+                    <Label className="text-black font-semibold">{t.email}</Label>
+                    <Input name="email" type="email" placeholder={t.emailPlaceholder} required className="bg-gray-50 border-gray-300 text-black" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-black font-semibold">Contraseña *</Label>
-                    <Input name="password" type="password" placeholder="••••••••" required className="bg-gray-50 border-gray-300 text-black" />
+                    <Label className="text-black font-semibold">{t.password}</Label>
+                    <Input name="password" type="password" placeholder={t.passwordPlaceholder} required className="bg-gray-50 border-gray-300 text-black" />
                   </div>
                 </div>
               </div>
@@ -415,20 +413,20 @@ export default function RegisterPage() {
               <button type="submit" disabled={isLoading}
                 style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                 className="w-full h-14 rounded-xl font-bold text-black text-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-60">
-                {isLoading ? <><Loader2 className="animate-spin w-5 h-5" /> Creando cuenta...</> : "Crear Cuenta"}
+                {isLoading ? <><Loader2 className="animate-spin w-5 h-5" /> {t.creatingAccount}</> : t.createAccountButton}
               </button>
             </form>
 
             <div className="flex flex-col items-center gap-4 pt-6 border-t border-gray-100">
               <div className="text-sm text-gray-600 text-center">
-                ¿Ya tienes una cuenta?{" "}
-                <Link href="/" className="text-[#5FD3BC] font-bold hover:underline">Inicia sesión aquí</Link>
+                {t.alreadyAccount}{" "}
+                <Link href="/" className="text-[#5FD3BC] font-bold hover:underline">{t.loginHere}</Link>
               </div>
               <div className="flex flex-col items-center gap-2 w-full">
-                <p className="text-sm text-gray-600">¿Eres una empresa?</p>
+                <p className="text-sm text-gray-600">{t.isCompany}</p>
                 <Link href="/register-company" className="w-full">
                   <button type="button" className="w-full h-11 rounded-lg font-bold text-black border border-gray-300 hover:bg-gray-50 transition-colors">
-                    Registrar Empresa
+                    {t.registerCompany}
                   </button>
                 </Link>
               </div>
@@ -439,7 +437,7 @@ export default function RegisterPage() {
 
       <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
         className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8">
-        © 2026 ProfileManager. Todos los derechos reservados.
+        {t.allRightsReserved}
       </footer>
     </div>
   );

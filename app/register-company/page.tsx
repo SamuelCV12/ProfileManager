@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Plus, X, Briefcase, Loader2 } from "lucide-react";
+import { Building2, Plus, X, Briefcase, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { registerCompany } from "../actions/register-company";
 import LanguageSelector from "@/components/ui/LanguageSelector";
@@ -45,11 +45,11 @@ export default function RegisterCompanyPage() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success(t.companyRegistered || "\u00a1Empresa registrada exitosamente!");
+        toast.success(t.companyRegistered);
         router.push("/");
       }
     } catch {
-      toast.error("Ocurrió un error al conectar con el servidor.");
+      toast.error(t.serverError);
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +73,9 @@ export default function RegisterCompanyPage() {
 
           {/* Header de la card */}
           <div className="px-8 pt-8 pb-6 border-b border-gray-100">
+            <Link href="/" className="flex items-center text-sm text-gray-500 hover:text-black mb-4 transition-colors">
+              <ArrowLeft className="w-4 h-4 mr-1" /> {t.backToLogin}
+            </Link>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-[#7FFFD4] rounded-full flex items-center justify-center shadow-inner">
                 <Building2 className="w-7 h-7 text-black" />
@@ -91,34 +94,34 @@ export default function RegisterCompanyPage() {
               <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">{t.companyInfo}</h3>
 
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">{t.companyName} *</Label>
-                <Input name="name" placeholder="Tech Solutions Colombia S.A.S" required
+                <Label className="text-black font-semibold text-sm">{t.companyName}</Label>
+                <Input name="name" placeholder={t.companyNamePlaceholder} required
                   className="h-11 bg-gray-50 border-gray-200 text-black" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-black font-semibold text-sm">{t.nit} *</Label>
-                  <Input name="nit" placeholder="900123456-7" required
+                  <Label className="text-black font-semibold text-sm">{t.nit}</Label>
+                  <Input name="nit" placeholder={t.nitPlaceholder} required
                     className="h-11 bg-gray-50 border-gray-200 text-black" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-black font-semibold text-sm">{t.locationLabel} *</Label>
-                  <Input name="location" placeholder="Bogotá, Colombia" required
+                  <Label className="text-black font-semibold text-sm">{t.locationLabel}</Label>
+                  <Input name="location" placeholder={t.locationPlaceholder} required
                     className="h-11 bg-gray-50 border-gray-200 text-black" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">{t.coreBusiness} *</Label>
+                <Label className="text-black font-semibold text-sm">{t.coreBusiness}</Label>
                 <textarea name="coreBusiness" required
                   className="flex min-h-[120px] w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-black placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FD3BC]"
-                  placeholder="Describe el giro principal de tu empresa (ej: Desarrollo de software, Consultoría tecnológica, etc.)" />
+                  placeholder={t.coreBusinessPlaceholder} />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">{t.employeeCount} *</Label>
-                <Input name="employeeCount" type="number" placeholder="50" required
+                <Label className="text-black font-semibold text-sm">{t.employeeCount}</Label>
+                <Input name="employeeCount" type="number" placeholder={t.employeeCountPlaceholder} required
                   className="h-11 bg-gray-50 border-gray-200 text-black" />
               </div>
             </section>
@@ -127,14 +130,14 @@ export default function RegisterCompanyPage() {
             <section className="space-y-4 border-t border-gray-100 pt-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-bold text-black">Cargos Disponibles (Opcional)</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">Puedes agregar y modificar cargos más adelante</p>
+                  <h3 className="text-lg font-bold text-black">{t.availablePositions}</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">{t.positionsDesc}</p>
                 </div>
                 {!isAddingRole && (
                   <button type="button" onClick={() => setIsAddingRole(true)}
                     style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
                     className="flex items-center gap-1 px-4 py-2 rounded-lg font-bold text-black text-sm hover:opacity-90">
-                    <Plus className="w-4 h-4" /> Agregar Cargo
+                    <Plus className="w-4 h-4" /> {t.addPosition}
                   </button>
                 )}
               </div>
@@ -144,7 +147,7 @@ export default function RegisterCompanyPage() {
                 <div className="p-6 border-2 border-[#5FD3BC] rounded-xl bg-[#7FFFD4]/5 space-y-4">
                   <div className="flex justify-between items-center border-b border-[#5FD3BC]/30 pb-3">
                     <h4 className="font-bold text-black flex items-center gap-2">
-                      <Briefcase className="w-5 h-5 text-[#5FD3BC]" /> Nueva Vacante
+                      <Briefcase className="w-5 h-5 text-[#5FD3BC]" /> {t.newVacancy}
                     </h4>
                     <button type="button" onClick={() => setIsAddingRole(false)} className="text-gray-400 hover:text-red-500">
                       <X className="w-5 h-5" />
@@ -152,34 +155,34 @@ export default function RegisterCompanyPage() {
                   </div>
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <Label className="text-black font-semibold text-sm">Título de la Vacante *</Label>
-                      <Input placeholder="Ej: Desarrollador Backend Senior" value={newRoleTitle}
+                      <Label className="text-black font-semibold text-sm">{t.positionTitle}</Label>
+                      <Input placeholder={t.positionTitlePlaceholder} value={newRoleTitle}
                         onChange={(e) => setNewRoleTitle(e.target.value)}
                         className="h-11 bg-white border-gray-200 text-black" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-black font-semibold text-sm">Información del Cargo / Requisitos</Label>
+                      <Label className="text-black font-semibold text-sm">{t.positionInfo}</Label>
                       <textarea
                         className="flex min-h-[100px] w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-black placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FD3BC]"
-                        placeholder="Información adicional..."
+                        placeholder={t.positionInfoPlaceholder}
                         value={newRoleDescription}
                         onChange={(e) => setNewRoleDescription(e.target.value)} />
                     </div>
                     {/* ✅ CAMPO SALARIO */}
                     <div className="space-y-1">
-                      <Label className="text-black font-semibold text-sm">Salario ofrecido (COP)</Label>
-                      <Input placeholder="Ej: 8000000" value={newRoleSalary}
+                      <Label className="text-black font-semibold text-sm">{t.salary}</Label>
+                      <Input placeholder={t.salaryPlaceholder} value={newRoleSalary}
                         onChange={(e) => setNewRoleSalary(e.target.value)}
                         className="h-11 bg-white border-gray-200 text-black" />
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
                       <button type="button" onClick={() => setIsAddingRole(false)}
                         className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                        Cancelar
+                        {t.cancel}
                       </button>
                       <button type="button" onClick={handleAddRole}
                         className="px-6 py-2 text-sm font-bold bg-black text-[#7FFFD4] rounded-lg hover:bg-gray-800 transition-colors">
-                        Guardar Cargo
+                        {t.savePosition}
                       </button>
                     </div>
                   </div>
@@ -210,15 +213,15 @@ export default function RegisterCompanyPage() {
 
             {/* ─── CREDENCIALES ─── */}
             <section className="space-y-4 border-t border-gray-100 pt-6">
-              <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">Credenciales de Acceso</h3>
+              <h3 className="text-lg font-bold text-black border-b border-gray-100 pb-2">{t.accessCredentials}</h3>
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">Correo electrónico corporativo *</Label>
-                <Input name="email" type="email" placeholder="rrhh@empresa.com" required
+                <Label className="text-black font-semibold text-sm">{t.corporateEmail}</Label>
+                <Input name="email" type="email" placeholder={t.corporateEmailPlaceholder} required
                   className="h-11 bg-gray-50 border-gray-200 text-black" />
               </div>
               <div className="space-y-2">
-                <Label className="text-black font-semibold text-sm">Contraseña *</Label>
-                <Input name="password" type="password" placeholder="••••••••" required
+                <Label className="text-black font-semibold text-sm">{t.password}</Label>
+                <Input name="password" type="password" placeholder={t.passwordPlaceholder} required
                   className="h-11 bg-gray-50 border-gray-200 text-black" />
               </div>
             </section>
@@ -227,18 +230,18 @@ export default function RegisterCompanyPage() {
             <button type="submit" disabled={isLoading}
               style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
               className="w-full h-14 rounded-xl font-bold text-black text-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-60">
-              {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Procesando...</> : "Registrar Empresa"}
+              {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> {t.processingButton}</> : t.registerButton}
             </button>
 
             {/* ─── LINKS ─── */}
             <div className="flex flex-col items-center gap-2 pt-2 border-t border-gray-100">
               <div className="text-sm text-gray-600">
-                ¿Ya tienes una cuenta?{" "}
-                <Link href="/" className="text-[#5FD3BC] font-bold hover:underline">Inicia sesión aquí</Link>
+                {t.alreadyAccount}{" "}
+                <Link href="/" className="text-[#5FD3BC] font-bold hover:underline">{t.loginHere}</Link>
               </div>
               <div className="text-sm text-gray-600">
-                ¿Eres un solicitante?{" "}
-                <Link href="/register" className="text-[#5FD3BC] font-bold hover:underline">Registro individual</Link>
+                {t.areYouCandidate}{" "}
+                <Link href="/register" className="text-[#5FD3BC] font-bold hover:underline">{t.individualRegistration}</Link>
               </div>
             </div>
           </form>
@@ -250,7 +253,7 @@ export default function RegisterCompanyPage() {
         style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
         className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8"
       >
-        © 2026 ProfileManager. Todos los derechos reservados.
+        {t.allRightsReserved}
       </footer>
     </div>
   );

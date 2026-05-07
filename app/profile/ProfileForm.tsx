@@ -3,13 +3,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Save, User, Loader2, Plus, Trash2, Camera, FileText, Sparkles, CheckCircle2 } from "lucide-react";
+import LanguageSelector from "../../components/ui/LanguageSelector";
 import { useLanguage } from "../../context/LanguageContext";
 import { updateProfile } from "../actions/profile";
 import { uploadAvatar } from "../actions/upload-avatar";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Save, User, Loader2, Plus, Trash2, Camera, FileText, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 type EducationEntry = { degree: string; institution: string; year: string };
@@ -38,10 +40,10 @@ function serializeExperience(list: ExperienceEntry[]): string[] {
 }
 
 function getCompletionMessage(pct: number, t: any) {
-  if (pct === 100) return "¡Perfecto! Tu perfil está completo 🎉";
-  if (pct >= 80)  return "¡Excelente! Tu perfil está casi completo";
-  if (pct >= 50)  return "Buen progreso, sigue completando tu perfil";
-  return "Completa tu perfil para mejorar tus oportunidades";
+  if (pct === 100) return t.profileCompleteMsg100;
+  if (pct >= 80)  return t.profileCompleteMsg80;
+  if (pct >= 50)  return t.profileCompleteMsg50;
+  return t.profileCompleteMsgLow;
 }
 
 export default function ProfileForm({ profile }: any) {
@@ -113,7 +115,7 @@ export default function ProfileForm({ profile }: any) {
       toast.error(result.error);
       setAvatarPreview(profile?.avatarUrl || null);
     } else {
-      toast.success("Foto subida. Guarda los cambios para confirmar.");
+      toast.success(t.avatarUploaded);
       setFormData(prev => ({ ...prev, avatarUrl: result.url } as any));
     }
   };
@@ -125,7 +127,7 @@ export default function ProfileForm({ profile }: any) {
 
     // Validar tamaño (15MB máx)
     if (file.size > 15 * 1024 * 1024) {
-      toast.error(t.fileTooLarge || "El archivo no debe superar los 15MB");
+      toast.error(t.fileTooLarge);
       return;
     }
 
@@ -134,13 +136,13 @@ export default function ProfileForm({ profile }: any) {
     const isText = file.type.startsWith("text/");
 
     if (!isPdf && !isWord && !isText) {
-      toast.error(t.unsupportedFormat || "Formato no soportado. Usa PDF, Word (.docx) o texto.");
+      toast.error(t.unsupportedFormat);
       return;
     }
 
     setIsProcessingCV(true);
     setCvProcessed(false);
-    toast.info(t.analyzingCV || "Analizando tu CV con IA...", { duration: 4000 });
+    toast.info(t.analyzingCV, { duration: 4000 });
 
     try {
       // Convertir archivo a base64
@@ -183,7 +185,9 @@ export default function ProfileForm({ profile }: any) {
 
         if (!firstNameMatch && !lastNameMatch) {
           toast.error(
-            `Este CV parece pertenecer a ${data.firstName} ${data.lastName}, no a ${formData.firstName} ${formData.lastName}. Por favor sube tu propio CV.`,
+            t.cvMismatchError
+              .replace("{firstName}", data.firstName)
+              .replace("{lastName}", data.lastName),
             { duration: 6000 }
           );
           setIsProcessingCV(false);
@@ -284,11 +288,11 @@ export default function ProfileForm({ profile }: any) {
       }
 
       setCvProcessed(true);
-      toast.success(t.cvProcessed || "¡CV procesado! Revisa los datos y guarda los cambios.");
+      toast.success(t.cvProcessedReview);
 
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error desconocido";
-      toast.error(`Error al procesar el CV: ${msg}`);
+      const msg = err instanceof Error ? err.message : t.unknownError;
+      toast.error(t.cvProcessingError.replace("{error}", msg));
     } finally {
       setIsProcessingCV(false);
       // Limpiar el input para permitir re-subir el mismo archivo
@@ -330,17 +334,41 @@ export default function ProfileForm({ profile }: any) {
     const result = await updateProfile(profile.id, dataToSave);
     setIsLoading(false);
     if (result.success) {
-      toast.success(t.profileUpdated || "¡Perfil actualizado con éxito!");
+      toast.success(t.profileUpdatedSuccess);
       router.refresh();
     } else {
-      toast.error(t.updateError || "Error al actualizar el perfil.");
+      toast.error(t.profileUpdateError);
     }
   };
 
   const completitud = profile?.completitud || 0;
 
+  const initials = profile?.firstName
+    ? [profile.firstName, profile.lastName].filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2)
+    : "U";
+
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+    <div className="min-h-screen bg-white text-black flex flex-col">
+      <header
+        style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+        className="py-4 px-6 flex justify-between items-center shadow-sm"
+      >
+        <h2 className="text-2xl font-black text-black tracking-tight">ProfileManager</h2>
+        <div className="flex items-center gap-3">
+          <LanguageSelector />
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-100 font-bold text-black text-sm">
+            {initials}
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-8">
+        <Link href="/dashboard"
+          className="text-gray-500 hover:text-black transition-colors flex items-center gap-2 font-medium mb-6">
+          <ArrowLeft className="w-5 h-5" /> {t.backToDashboard}
+        </Link>
+
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
 
       {/* ─── HEADER CARD ─── */}
       <div className="bg-gray-50 border-b border-gray-100 px-6 py-5">
@@ -349,8 +377,8 @@ export default function ProfileForm({ profile }: any) {
             <User className="w-6 h-6 text-[#2D8A75]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-black">Mi Perfil</h2>
-            <p className="text-sm text-gray-500">Actualiza tu información personal y profesional</p>
+            <h2 className="text-xl font-bold text-black">{t.myProfile}</h2>
+            <p className="text-sm text-gray-500">{t.profileSubtitle}</p>
           </div>
         </div>
         <div className="space-y-1.5">
@@ -470,7 +498,7 @@ export default function ProfileForm({ profile }: any) {
             <div className="space-y-1.5">
               <Label className="font-semibold text-black">{t.phone} *</Label>
               <Input name="phone" type="tel" value={formData.phone} onChange={handleChange}
-                placeholder="+57 300 123 4567"
+                placeholder={t.phonePlaceholder}
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
             <div className="space-y-1.5">
@@ -481,14 +509,14 @@ export default function ProfileForm({ profile }: any) {
             <div className="space-y-1.5">
               <Label className="font-semibold text-black">{t.desiredRole} *</Label>
               <Input name="desiredRole" value={formData.desiredRole} onChange={handleChange}
-                placeholder="Ej: Desarrollador Backend"
+                placeholder={t.desiredRolePlaceholder}
                 className="h-11 rounded-xl text-black border-gray-200 bg-gray-50" />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label className="font-semibold text-black">{t.description} *</Label>
             <Textarea name="description" value={formData.description} onChange={handleChange}
-              placeholder="Cuéntanos sobre ti..."
+              placeholder={t.aboutYouPlaceholder}
               className="min-h-[100px] rounded-xl text-black border-gray-200 bg-gray-50" />
           </div>
         </section>
@@ -579,6 +607,15 @@ export default function ProfileForm({ profile }: any) {
           </button>
         </div>
       </form>
+        </div>
+      </main>
+
+      <footer
+        style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8"
+      >
+        {t.allRightsReserved}
+      </footer>
     </div>
   );
 }

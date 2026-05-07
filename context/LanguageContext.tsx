@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { translations, Locale, Translations } from "../lib/i18n";
+import { translations, Language as Locale, Translations } from "../lib/i18n/index";
 
 interface LanguageContextType {
   locale: Locale;

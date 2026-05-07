@@ -62,7 +62,6 @@ export default async function DashboardPage() {
           matchScore,
           mustHave:    v.mustHave,
           isApplied:   appliedVacancyIds.has(v.id),
-          isUrgent:    matchScore >= 80,
           isActive:    v.isActive,
         };
       })

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Search, SlidersHorizontal, MapPin, Monitor, DollarSign, Briefcase } from "lucide-react";
+import { Search, SlidersHorizontal, MapPin, Monitor, DollarSign, Briefcase, EyeOff } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { JobCard } from "../../components/ui/JobCard";
 import { ApplicationCard } from "../../components/ui/ApplicationCard";
@@ -277,6 +277,10 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
               className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#7FFFD4] data-[state=active]:text-black border border-gray-200 text-gray-500 font-bold">
               {t.myApplications} ({postulaciones.length})
             </TabsTrigger>
+          <TabsTrigger value="hidden"
+              className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#7FFFD4] data-[state=active]:text-black border border-gray-200 text-gray-500 font-bold">
+              {t.hiddenJobs} ({ocultasIds.size})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="vacantes">
@@ -291,7 +295,6 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
                   salaryRange={job.salarioMin ? formatCurrency(job.salarioMin) : null}
                   description={job.description}
                   modalidad={job.modalidad}
-                  isUrgent={job.isUrgent}
                   isActive={job.isActive}
                   onHide={() => toggleOcultar(job.id)}
                   onVerDetalle={() => setVacanteDetalle(job)}
@@ -328,6 +331,35 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {vacantes
+                .filter((job: any) => ocultasIds.has(job.id))
+                .map((job: any) => (
+                  <JobCard key={job.id}
+                    id={job.id} profileId={profile?.id}
+                    title={job.title} company={job.company}
+                    location={job.location} match={job.matchScore}
+                    tags={job.mustHave}
+                    isApplied={postuladas.has(job.id)}
+                    salaryRange={job.salarioMin ? formatCurrency(job.salarioMin) : null}
+                    description={job.description}
+                    modalidad={job.modalidad}
+                    isActive={job.isActive}
+                    isHidden={true}
+                    onHide={() => toggleOcultar(job.id)}
+                    onVerDetalle={() => setVacanteDetalle(job)}
+                  />
+                ))}
+            </div>
+            {ocultasIds.size === 0 && (
+              <div className="text-center py-20 text-gray-400">
+                <EyeOff className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">{t.noHiddenJobs}</p>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -343,9 +375,6 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${getMatchColor(vacanteDetalle.matchScore)}`}>
                         {vacanteDetalle.matchScore}% Match
                       </span>
-                      {vacanteDetalle.isUrgent && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">Urgente</span>
-                      )}
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
                         {vacanteDetalle.modalidad}
                       </span>
@@ -382,7 +411,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
 
                 {/* Descripción completa */}
                 <div>
-                  <h4 className="font-bold text-black mb-2">Descripción del cargo</h4>
+                  <h4 className="font-bold text-black mb-2">{t.jobDescription}</h4>
                   <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
                     {vacanteDetalle.description}
                   </p>
@@ -391,7 +420,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
                 {/* Requisitos must-have */}
                 {vacanteDetalle.mustHave?.length > 0 && (
                   <div>
-                    <h4 className="font-bold text-black mb-2">Requisitos indispensables</h4>
+                    <h4 className="font-bold text-black mb-2">{t.essentialRequirements}</h4>
                     <div className="flex flex-wrap gap-2">
                       {vacanteDetalle.mustHave.map((req: string, i: number) => (
                         <span key={i} className="px-3 py-1 bg-[#7FFFD4]/20 text-[#1a7a65] rounded-full text-sm font-medium border border-[#5FD3BC]/30">
@@ -415,7 +444,7 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
                       : "hover:opacity-90"
                   }`}
                 >
-                  {postuladas.has(vacanteDetalle.id) ? "Postulado ✓" : "Postularme a esta vacante"}
+                  {postuladas.has(vacanteDetalle.id) ? t.appliedCheck : t.applyToVacancy}
                 </button>
               </div>
             </>
@@ -423,9 +452,11 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
         </DialogContent>
       </Dialog>
 
-      <footer style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
-        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-auto">
-        {t.footer}
+      <footer
+        style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }}
+        className="w-full py-4 text-center text-sm text-black/70 font-medium mt-8"
+      >
+        {t.allRightsReserved}
       </footer>
     </div>
   );
