@@ -3,6 +3,7 @@
 
 import prisma from "../../lib/prisma";
 import { cookies } from "next/headers";
+import bcrypt from "bcryptjs"; 
 
 export async function loginUser(data: { email: string; password: string; tipoUsuario: string }) {
   try {
@@ -14,9 +15,11 @@ export async function loginUser(data: { email: string; password: string; tipoUsu
       return { error: "Usuario no encontrado. Revisa tu correo o regístrate." };
     }
 
-    if (user.password !== data.password) {
+    const passwordValida = await bcrypt.compare(data.password, user.password);
+    if (!passwordValida) {
       return { error: "Contraseña incorrecta." };
     }
+    
 
     const expectedRole = data.tipoUsuario === "empresa" ? "COMPANY" : "CANDIDATE";
     if (user.role !== expectedRole) {

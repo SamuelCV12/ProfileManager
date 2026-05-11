@@ -2,6 +2,7 @@
 "use server";
 
 import prisma from "../../lib/prisma";
+import bcrypt from "bcryptjs";
 
 export interface RegisterData {
   firstName: string;
@@ -52,12 +53,14 @@ export async function registerUser(data: RegisterData) {
       return { error: "Este correo ya está registrado." };
     }
 
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
     const completitud = calcularCompletitud(data);
 
     const newUser = await prisma.user.create({
       data: {
         email:    data.email,
-        password: data.password,
+        password: hashedPassword,
         role:     data.role,
         profile: {
           create: {
