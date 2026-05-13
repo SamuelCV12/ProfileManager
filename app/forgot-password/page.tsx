@@ -1,3 +1,9 @@
+/**
+ * Página de "Olvidé mi contraseña" para la extensión de VSCode.
+ * Permite a los usuarios solicitar un enlace de restablecimiento de contraseña.
+ * Se comunica con el servidor para generar el enlace y muestra mensajes de éxito o error.  
+ */
+
 "use client";
 
 import { useState } from "react";

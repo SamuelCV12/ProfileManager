@@ -4,7 +4,8 @@
 import { useRef, useEffect, useState } from "react";
 import { Languages, ChevronDown, Check, Loader2 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
-import type { Locale } from "../../lib/i18n";
+import { useTranslationController } from "../../context/TranslationController";
+import type { Language as Locale } from "../../lib/i18n";
 
 const LANGUAGES: { code: Locale; label: string; flag: string }[] = [
   { code: "es", label: "Español",  flag: "🇨🇴" },
@@ -13,7 +14,9 @@ const LANGUAGES: { code: Locale; label: string; flag: string }[] = [
 ];
 
 export default function LanguageSelector() {
-  const { locale, setLocale, isTranslating } = useLanguage();
+  const { locale, setLocale } = useLanguage();
+  const controller = useTranslationController();
+  const isTranslating = controller?.isTranslating ?? false;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

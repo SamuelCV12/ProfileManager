@@ -32,6 +32,8 @@ export const frDashboard = {
   // ── Candidatures ──
   myApplications: "Mes candidatures",
   noApplications: "Vous n'avez pas encore postulé",
+  appliedAt: "Postulé le",
+  scheduledInterview: "Entretien programmé",
 
   // ── Modal Offre d'emploi ──
   matchPercentage: "Correspondance",
@@ -41,6 +43,7 @@ export const frDashboard = {
   location: "Localisation",
   modality_field: "Modalité",
   apply: "Postuler",
+  applyNow: "Postuler maintenant",
   applied: "Déjà postulé",
   hide: "Masquer",
   viewDetail: "Voir le détail",

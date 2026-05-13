@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { TranslationProvider } from "@/context/TranslationController";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -19,8 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className={cn(geist.variable, geistMono.variable)}>
       <body className="font-sans antialiased">
         <LanguageProvider>
-          {children}
-          <Toaster position="top-center" richColors />
+          <TranslationProvider>
+            {children}
+            <Toaster position="top-center" richColors />
+          </TranslationProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -32,6 +32,8 @@ export const esDashboard = {
   // ── Aplicaciones ──
   myApplications: "Mis Postulaciones",
   noApplications: "No has hecho postulaciones aún",
+  appliedAt: "Postulado el",
+  scheduledInterview: "Entrevista agendada",
 
   // ── Modal Vacante ──
   matchPercentage: "Match",
@@ -41,6 +43,7 @@ export const esDashboard = {
   location: "Ubicación",
   modality_field: "Modalidad",
   apply: "Postularse",
+  applyNow: "Postularme ahora",
   applied: "Ya postulado",
   hide: "Ocultar",
   viewDetail: "Ver detalle",

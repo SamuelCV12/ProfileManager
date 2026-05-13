@@ -32,6 +32,8 @@ export const enDashboard = {
   // ── Applications ──
   myApplications: "My Applications",
   noApplications: "You haven't applied yet",
+  appliedAt: "Applied on",
+  scheduledInterview: "Scheduled Interview",
 
   // ── Vacancy Modal ──
   matchPercentage: "Match",
@@ -41,6 +43,7 @@ export const enDashboard = {
   location: "Location",
   modality_field: "Modality",
   apply: "Apply",
+  applyNow: "Apply now",
   applied: "Already applied",
   hide: "Hide",
   viewDetail: "View detail",

@@ -1,3 +1,10 @@
+/**
+ * Página de restablecimiento de contraseña para la extensión de VSCode.
+ * Permite a los usuarios ingresar una nueva contraseña utilizando un token de restablecimiento.
+ * Se comunica con el servidor para actualizar la contraseña y muestra mensajes de éxito o error.
+ * Si el token no es válido o ha expirado, muestra un mensaje de error y un enlace para solicitar un nuevo enlace de restablecimiento.
+ */
+
 "use client";
 
 import { useState, Suspense } from "react";
