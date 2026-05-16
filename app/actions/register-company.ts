@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "../../lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function registerCompany(formData: any, roles: {title: string, description: string}[]) {
   try {
@@ -13,11 +14,12 @@ export async function registerCompany(formData: any, roles: {title: string, desc
       return { error: "Este correo ya está registrado." };
     }
 
+    const hashedPassword = await bcrypt.hash(formData.password, 12);
     // 2. Crear todo en una sola transacción para evitar datos incompletos
     await prisma.user.create({
       data: {
         email: formData.email,
-        password: formData.password, // En producción usa un hash aquí
+        password: hashedPassword, // En producción usa un hash aquí
         role: "COMPANY",
         company: {
           create: {
