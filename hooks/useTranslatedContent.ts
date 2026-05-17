@@ -13,19 +13,22 @@ export function useTranslatedContent<T extends Record<string, string>>(
   const [content, setContent] = useState<T>(originalContent);
   const [isTranslating, setIsTranslating] = useState(false);
   const prevLocale = useRef<typeof locale | null>(null);
+  const prevContentKey = useRef("");
   const id = useId();
 
   useEffect(() => {
     const localeChanged = prevLocale.current !== locale;
+    const contentKey = JSON.stringify(originalContent);
+    const contentChanged = prevContentKey.current !== contentKey;
     prevLocale.current = locale;
+    prevContentKey.current = contentKey;
 
     if (locale === "es") {
-      if (localeChanged) setContent(originalContent);
+      if (localeChanged || contentChanged) setContent(originalContent);
       return;
     }
 
-    // Traducir en el primer mount O cuando cambia el idioma
-    if (!localeChanged) return;
+    if (!localeChanged && !contentChanged) return;
 
     setIsTranslating(true);
 
@@ -37,7 +40,7 @@ export function useTranslatedContent<T extends Record<string, string>>(
       .then(translated => setContent(translated as T))
       .catch(() => setContent(originalContent))
       .finally(() => setIsTranslating(false));
-  }, [locale]);
+  }, [locale, originalContent]);
 
   return {
     content,

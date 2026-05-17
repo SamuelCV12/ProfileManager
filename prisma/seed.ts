@@ -48,7 +48,6 @@ async function main() {
           modality:    "Remoto",
           salaryRange: 4000000,
           mustHave:    ["React", "Next.js", "TypeScript", "PostgreSQL"],
-          niceToHave:  ["Prisma", "Tailwind CSS"],
           isActive:    true,
         },
         {
@@ -58,7 +57,6 @@ async function main() {
           modality:    "Híbrido",
           salaryRange: 5000000,
           mustHave:    ["Node.js", "SQL", "Java", "Docker"],
-          niceToHave:  ["AWS", "Kubernetes"],
           isActive:    true,
         },
         {
@@ -68,7 +66,6 @@ async function main() {
           modality:    "Presencial",
           salaryRange: 4000000,
           mustHave:    ["Figma", "Adobe XD", "Prototipado"],
-          niceToHave:  ["HTML", "CSS"],
           isActive:    true,
         },
         {
@@ -78,7 +75,6 @@ async function main() {
           modality:    "Híbrido",
           salaryRange: 4500000,
           mustHave:    ["Python", "SQL", "Power BI", "Excel"],
-          niceToHave:  ["Tableau", "Machine Learning"],
           isActive:    true,
         },
         {
@@ -88,7 +84,6 @@ async function main() {
           modality:    "Remoto",
           salaryRange: 6000000,
           mustHave:    ["Docker", "Kubernetes", "AWS", "Linux"],
-          niceToHave:  ["Terraform", "GitHub Actions"],
           isActive:    true,
         }
       ]

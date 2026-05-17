@@ -5,6 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "../../../../context/LanguageContext";
+import { useTranslatedContent } from "../../../../hooks/useTranslatedContent";
 import {
   ArrowLeft, Search, SlidersHorizontal, Mail, Phone,
   MapPin, X, ChevronDown, Eye, GraduationCap, Briefcase,
@@ -68,6 +69,13 @@ export default function PostulacionesClient({
   postulaciones: Postulacion[];
 }) {
   const { t } = useLanguage();
+  const { content: translatedVacancy } = useTranslatedContent({
+    title: vacancyTitle,
+    description: vacancyDescription,
+  });
+  const modalityLabel: Record<string, string> = {
+    Remoto: t.remote, Presencial: t.onsite, Híbrido: t.hybrid,
+  };
   const statusConfig = getStatusConfig(t);
   const [postulaciones, setPostulaciones] = useState<Postulacion[]>(postulacionesIniciales);
 
@@ -144,11 +152,11 @@ export default function PostulacionesClient({
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-black mb-1">{vacancyTitle}</h1>
-              <p className="text-gray-500 text-sm mb-4">{vacancyDescription}</p>
+              <h1 className="text-3xl font-bold text-black mb-1">{translatedVacancy.title}</h1>
+              <p className="text-gray-500 text-sm mb-4">{translatedVacancy.description}</p>
               <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                 <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg font-medium">
-                  {vacancyModalidad}
+                  {modalityLabel[vacancyModalidad] || vacancyModalidad}
                 </span>
                 {vacancySalaryRange && (
                   <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg font-bold text-black">

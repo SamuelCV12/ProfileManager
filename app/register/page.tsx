@@ -20,7 +20,6 @@ export default function RegisterPage() {
   const [isLoading,      setIsLoading]      = useState(false);
   const [isProcessingCV, setIsProcessingCV] = useState(false);
   const [cvProcessed,    setCvProcessed]    = useState(false);
-  const [resumeUrl,      setResumeUrl]      = useState("");
   const [firstName,      setFirstName]      = useState("");
   const [lastName,       setLastName]       = useState("");
   const [desiredRole,    setDesiredRole]    = useState("");
@@ -113,7 +112,7 @@ export default function RegisterPage() {
       setDesiredRole(data.desiredRole || "");
       setDescription(data.summary     || "");
       setSkills((data.skills || []).join("\n"));
-      setResumeUrl(file.name);
+      // Resume filename no longer stored
 
       // Educación
       if (data.education?.length > 0) {
@@ -187,8 +186,8 @@ export default function RegisterPage() {
       birthDate:   formData.get("birthDate")   as string,
       skills:      skills.split("\n").filter(s => s.trim() !== ""),
       role:        "CANDIDATE" as const,
-      education:   educationList.map(e  => `${e.degree} | ${e.institution} | ${e.year}`),
-      experience:  experienceList.map(e => `${e.role} | ${e.company} | ${e.period} | ${e.description}`),
+      education:   educationList.filter(e => e.degree.trim() || e.institution.trim() || e.year.trim()).map(e => `${e.degree} | ${e.institution} | ${e.year}`),
+      experience:  experienceList.filter(e => e.role.trim() || e.company.trim() || e.period.trim() || e.description.trim()).map(e => `${e.role} | ${e.company} | ${e.period} | ${e.description}`),
       avatarUrl,
     };
 

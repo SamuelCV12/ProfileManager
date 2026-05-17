@@ -19,6 +19,8 @@ export const frDashboardCompany = {
   budget: "Budget",
   budgetNote: "Entrez le montant en pesos colombiens sans points ni virgules",
   requiredSkills: "Compétences Requises",
+  niceToHaveLabel: "Nice to have (souhaitable)",
+  niceToHavePlaceholder: "Ex: Prisma, Tailwind CSS",
   saving: "Enregistrement...",
   updateJob: "Mettre à Jour le Poste",
 

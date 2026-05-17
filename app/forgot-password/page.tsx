@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Mail, KeyRound } from "lucide-react";
 import { requestPasswordReset } from "../actions/reset-password"; 
+import LanguageSelector from "../../components/ui/LanguageSelector";
 
 export default function ForgotPasswordPage() {
   const { t } = useLanguage();
@@ -47,7 +48,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }} className="w-full px-6 py-4 flex items-center justify-between shadow-sm">
+        <span className="text-black font-bold text-xl tracking-tight">ProfileManager</span>
+        <LanguageSelector />
+      </header>
+      <div className="flex-1 flex items-center justify-center p-4">
       <Card className="max-w-md w-full shadow-md border-none bg-white">
         <CardHeader className="text-center pb-2">
           <div className="mx-auto w-12 h-12 bg-[#7FFFD4]/20 rounded-full flex items-center justify-center mb-4">
@@ -101,6 +107,7 @@ export default function ForgotPasswordPage() {
             </Link>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

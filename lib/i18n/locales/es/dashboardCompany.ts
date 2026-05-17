@@ -19,6 +19,8 @@ export const esDashboardCompany = {
   budget: "Presupuesto",
   budgetNote: "Ingrese el monto en pesos colombianos sin puntos ni comas",
   requiredSkills: "Requisitos Indispensables",
+  niceToHaveLabel: "Requisitos deseables",
+  niceToHavePlaceholder: "Ej: Prisma, Tailwind CSS",
   saving: "Guardando...",
   updateJob: "Actualizar Cargo",
 

@@ -46,6 +46,10 @@ export function JobCard({
   const statusConfig = status ? STATUS_CONFIG[status] || STATUS_CONFIG["POSTULADO"] : null;
   const esVacante = match !== null && match !== undefined;
 
+  const modalityLabel: Record<string, string> = {
+    Remoto: t.remote, Presencial: t.onsite, Híbrido: t.hybrid,
+  };
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-3">
 
@@ -88,7 +92,7 @@ export function JobCard({
         </span>
         {modalidad && (
           <span className="flex items-center gap-1">
-            <Monitor className="w-4 h-4 text-[#5FD3BC]" /> {modalidad}
+            <Monitor className="w-4 h-4 text-[#5FD3BC]" /> {modalityLabel[modalidad] || modalidad}
           </span>
         )}
       </div>

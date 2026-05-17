@@ -1,7 +1,7 @@
 // app/profile/ProfileForm.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, User, Loader2, Plus, Trash2, Camera, FileText, Sparkles, CheckCircle2 } from "lucide-react";
@@ -9,6 +9,7 @@ import LanguageSelector from "../../components/ui/LanguageSelector";
 import { useLanguage } from "../../context/LanguageContext";
 import { updateProfile } from "../actions/profile";
 import { uploadAvatar } from "../actions/upload-avatar";
+import { calcularCompletitud } from "../../lib/completitud";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
@@ -32,11 +33,15 @@ function parseExperience(arr: string[]): ExperienceEntry[] {
 }
 
 function serializeEducation(list: EducationEntry[]): string[] {
-  return list.map((e) => [e.degree, e.institution, e.year].join(" | "));
+  return list
+    .filter(e => e.degree.trim() || e.institution.trim() || e.year.trim())
+    .map((e) => [e.degree, e.institution, e.year].join(" | "));
 }
 
 function serializeExperience(list: ExperienceEntry[]): string[] {
-  return list.map((e) => [e.role, e.company, e.period, e.description].join(" | "));
+  return list
+    .filter(e => e.role.trim() || e.company.trim() || e.period.trim() || e.description.trim())
+    .map((e) => [e.role, e.company, e.period, e.description].join(" | "));
 }
 
 function getCompletionMessage(pct: number, t: any) {
@@ -65,8 +70,11 @@ export default function ProfileForm({ profile }: any) {
   const [educationList, setEducationList] = useState<EducationEntry[]>([]);
   const [experienceList, setExperienceList] = useState<ExperienceEntry[]>([]);
 
+  const initialLoadDone = useRef(false);
+
   useEffect(() => {
-    if (profile) {
+    if (profile && !initialLoadDone.current) {
+      initialLoadDone.current = true;
       setFormData({
         firstName: profile.firstName || "",
         lastName: profile.lastName || "",
@@ -335,13 +343,55 @@ export default function ProfileForm({ profile }: any) {
     setIsLoading(false);
     if (result.success) {
       toast.success(t.profileUpdatedSuccess);
+      if (result.profile) {
+        setFormData({
+          firstName: result.profile.firstName || "",
+          lastName: result.profile.lastName || "",
+          desiredRole: result.profile.desiredRole || "",
+          description: result.profile.description || "",
+          skills: result.profile.skills?.join("\n") || "",
+          birthDate: result.profile.birthDate ? new Date(result.profile.birthDate).toISOString().split("T")[0] : "",
+          phone: result.profile.phone || "",
+        });
+        setAvatarPreview(result.profile.avatarUrl || null);
+        const edu = result.profile.education || [];
+        setEducationList(
+          edu.length > 0 && edu[0].includes(" | ")
+            ? parseEducation(edu)
+            : edu.map((e: string) => ({ degree: e, institution: "", year: "" }))
+        );
+        const exp = result.profile.experience || [];
+        setExperienceList(
+          exp.length > 0 && exp[0].includes(" | ")
+            ? parseExperience(exp)
+            : exp.map((e: string) => ({ role: e, company: "", period: "", description: "" }))
+        );
+      }
       router.refresh();
     } else {
       toast.error(t.profileUpdateError);
     }
   };
 
-  const completitud = profile?.completitud || 0;
+  const completitud = useMemo(() => {
+    const skillsArray = formData.skills
+      .split("\n")
+      .filter((s: string) => s.trim() !== "");
+    const educationArray = educationList.some(e => e.degree.trim() || e.institution.trim() || e.year.trim()) ? ["has_edu"] : [];
+    const experienceArray = experienceList.some(e => e.role.trim() || e.company.trim() || e.period.trim() || e.description.trim()) ? ["has_exp"] : [];
+
+    return calcularCompletitud({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      desiredRole: formData.desiredRole,
+      description: formData.description,
+      birthDate: formData.birthDate,
+      phone: formData.phone,
+      skills: skillsArray,
+      education: educationArray,
+      experience: experienceArray,
+    }, avatarPreview);
+  }, [formData, educationList, experienceList, avatarPreview]);
 
   const initials = profile?.firstName
     ? [profile.firstName, profile.lastName].filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2)

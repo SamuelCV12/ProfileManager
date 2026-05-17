@@ -15,7 +15,7 @@ export const frProfile = {
   profileCompleteMsgLow: "Complétez votre profil pour améliorer vos opportunités",
 
   // ── CV processing ──
-  autocompleteCV: "Complétez automatiquement votre profil avec l'IA",
+  autocompleteCV: "Complétez automatiquement votre profil ",
   uploadCVDesc: "Téléchargez votre CV en PDF, Word ou texte et nous extrairons les informations automatiquement",
   cvSuccess: "CV traité avec succès !",
   reviewCV: "Vérifiez les données extraites et enregistrez les modifications",

@@ -19,6 +19,8 @@ export const enDashboardCompany = {
   budget: "Budget",
   budgetNote: "Enter amount in Colombian pesos without dots or commas",
   requiredSkills: "Required Skills",
+  niceToHaveLabel: "Nice to have",
+  niceToHavePlaceholder: "E.g: Prisma, Tailwind CSS",
   saving: "Saving...",
   updateJob: "Update Position",
 

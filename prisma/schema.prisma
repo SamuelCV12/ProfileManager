@@ -31,13 +31,11 @@ model Profile {
   birthDate    DateTime?
   description  String?
   desiredRole  String?
-  resumeUrl    String?
-  avatarUrl    String?
-  phone        String?       
-  education    String[]
-  experience   String[]
-  skills       String[]
-  preferences  String[]
+    avatarUrl    String?
+    phone        String?       
+    education    String[]
+    experience   String[]
+    skills       String[]
   completitud  Int           @default(0)
   applications Application[]
 }
@@ -62,9 +60,9 @@ model Vacancy {
   description  String
   modality     String        @default("Presencial")
   salaryRange  Int?
-  mustHave     String[]
-  niceToHave   String[]
-  isActive     Boolean       @default(true)
+    mustHave     String[]
+    niceToHave   String[]
+    isActive     Boolean       @default(true)
   applications Application[]
   createdAt    DateTime      @default(now())
 }

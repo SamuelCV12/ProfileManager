@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { toast } from "sonner";
 import { Loader2, LockKeyhole, ArrowRight } from "lucide-react";
 import { resetPassword } from "../actions/reset-password";
+import LanguageSelector from "../../components/ui/LanguageSelector";
 
 function ResetPasswordForm() {
   const { t } = useLanguage();
@@ -131,7 +132,12 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   const { t } = useLanguage();
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header style={{ background: "linear-gradient(to right, #7FFFD4, #98FF98)" }} className="w-full px-6 py-4 flex items-center justify-between shadow-sm">
+        <span className="text-black font-bold text-xl tracking-tight">ProfileManager</span>
+        <LanguageSelector />
+      </header>
+      <div className="flex-1 flex items-center justify-center p-4">
       <Card className="max-w-md w-full shadow-md border-none bg-white text-center">
         <CardHeader className="pb-2">
           <CardTitle className="text-2xl font-bold text-black">{t.createNewPasswordTitle}</CardTitle>
@@ -145,6 +151,7 @@ export default function ResetPasswordPage() {
           </Suspense>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

@@ -35,6 +35,7 @@ export default async function DashboardCompanyPage() {
     isActive:              v.isActive,
     candidatosPostulados:  v.applications.length,
     mustHave:              v.mustHave,
+    niceToHave:            v.niceToHave,
   }));
 
   return (

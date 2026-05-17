@@ -17,6 +17,7 @@ import LanguageSelector from "../../components/ui/LanguageSelector";
 import LogoutButton from "../../components/ui/LogoutButton";
 import { toast } from "sonner";
 import { applyToVacancy } from "../../app/actions/apply";
+import { calcularCompletitud } from "../../lib/completitud";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(amount);
@@ -29,23 +30,7 @@ function getMatchColor(match: number) {
 }
 
 function ProfileCard({ profile, t }: { profile: any; t: any }) {
-  // Calcular completitud real en el cliente para evitar valores viejos de BD
-  const calcularCompletitud = (p: any): number => {
-    let score = 0;
-    if (p?.firstName?.trim())                              score += 10;
-    if (p?.lastName?.trim())                               score += 10;
-    if (p?.desiredRole?.trim())                            score += 10;
-    if (p?.description?.trim())                            score += 10;
-    if (p?.birthDate)                                      score += 10;
-    if (p?.phone?.trim())                                  score += 10;
-    if (Array.isArray(p?.skills)     && p.skills.length > 0)     score += 10;
-    if (Array.isArray(p?.education)  && p.education.length > 0)  score += 10;
-    if (Array.isArray(p?.experience) && p.experience.length > 0) score += 10;
-    if (p?.avatarUrl?.trim())                              score += 10;
-    return Math.min(score, 100);
-  };
-
-  const pct = calcularCompletitud(profile);
+  const pct = calcularCompletitud(profile, profile?.avatarUrl || null);
 
   const getBarColor = () => {
     if (pct === 100) return "from-[#5FD3BC] to-[#7FFFD4]";
@@ -115,7 +100,7 @@ function ProfileCard({ profile, t }: { profile: any; t: any }) {
 }
 
 export default function ClientDashboard({ profile, vacantes, postulaciones, autoPostuladas }: any) {
-  const { t } = useLanguage();
+  const { t, locale, translateContent } = useLanguage();
   const [busqueda,         setBusqueda]         = useState("");
   const [filtroModalidad,  setFiltroModalidad]  = useState<string>("todas");
   const [filtroSalarioMin, setFiltroSalarioMin] = useState<string>("");
@@ -123,9 +108,25 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
   const [ocultasIds,       setOcultasIds]       = useState<Set<string>>(new Set());
   const [matchMinimo,      setMatchMinimo]      = useState<number>(0);
   const [vacanteDetalle,   setVacanteDetalle]   = useState<any>(null);
+  const [translatedDetail, setTranslatedDetail] = useState<any>(null);
   const [postuladas,       setPostuladas]       = useState<Set<string>>(
     new Set(vacantes.filter((v: any) => v.isApplied).map((v: any) => v.id))
   );
+
+  // ── Traducir detalle de vacante cuando cambia ──
+  useEffect(() => {
+    if (!vacanteDetalle) { setTranslatedDetail(null); return; }
+    if (locale === "es") { setTranslatedDetail(vacanteDetalle); return; }
+    translateContent({
+      title: vacanteDetalle.title,
+      description: vacanteDetalle.description,
+      company: vacanteDetalle.company,
+    }).then(t => setTranslatedDetail({ ...vacanteDetalle, ...t }));
+  }, [vacanteDetalle, locale]);
+
+  const modalityLabel: Record<string, string> = {
+    Remoto: t.remote, Presencial: t.onsite, Híbrido: t.hybrid,
+  };
 
   // ── Notificación de auto-postulaciones ──
   useEffect(() => {
@@ -138,6 +139,11 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
       });
     }
   }, []);
+
+  // ── Sincronizar estado de postulaciones cuando vacantes cambia (desde servidor) ──
+  useEffect(() => {
+    setPostuladas(new Set(vacantes.filter((v: any) => v.isApplied).map((v: any) => v.id)));
+  }, [vacantes]);
 
   const toggleOcultar = (id: string) => {
     setOcultasIds(prev => {
@@ -366,89 +372,92 @@ export default function ClientDashboard({ profile, vacantes, postulaciones, auto
       {/* ── MODAL DETALLE VACANTE ── */}
       <Dialog open={!!vacanteDetalle} onOpenChange={() => setVacanteDetalle(null)}>
         <DialogContent className="max-w-2xl bg-white rounded-2xl max-h-[90vh] overflow-y-auto">
-          {vacanteDetalle && (
-            <>
-              <DialogHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${getMatchColor(vacanteDetalle.matchScore)}`}>
-                        {vacanteDetalle.matchScore}% Match
-                      </span>
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
-                        {vacanteDetalle.modalidad}
-                      </span>
+          {vacanteDetalle && (() => {
+            const detail = translatedDetail || vacanteDetalle;
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getMatchColor(detail.matchScore)}`}>
+                          {detail.matchScore}% Match
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
+                          {modalityLabel[detail.modalidad] || detail.modalidad}
+                        </span>
+                      </div>
+                      <DialogTitle className="text-2xl font-black text-black">
+                        {detail.title}
+                      </DialogTitle>
+                      <p className="text-gray-500 font-medium mt-1">{detail.company}</p>
                     </div>
-                    <DialogTitle className="text-2xl font-black text-black">
-                      {vacanteDetalle.title}
-                    </DialogTitle>
-                    <p className="text-gray-500 font-medium mt-1">{vacanteDetalle.company}</p>
                   </div>
-                </div>
-              </DialogHeader>
+                </DialogHeader>
 
-              <div className="space-y-5 mt-2">
+                <div className="space-y-5 mt-2">
 
-                {/* Info básica */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#5FD3BC] shrink-0" />
-                    <span className="text-sm text-gray-700 font-medium">{vacanteDetalle.location}</span>
+                  {/* Info básica */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#5FD3BC] shrink-0" />
+                      <span className="text-sm text-gray-700 font-medium">{detail.location}</span>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
+                      <Monitor className="w-4 h-4 text-[#5FD3BC] shrink-0" />
+                      <span className="text-sm text-gray-700 font-medium">{modalityLabel[detail.modalidad] || detail.modalidad}</span>
+                    </div>
+                    {detail.salarioMin > 0 && (
+                      <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2 col-span-2">
+                        <DollarSign className="w-4 h-4 text-[#5FD3BC] shrink-0" />
+                        <span className="text-sm text-gray-700 font-medium">
+                          {formatCurrency(detail.salarioMin)} COP
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
-                    <Monitor className="w-4 h-4 text-[#5FD3BC] shrink-0" />
-                    <span className="text-sm text-gray-700 font-medium">{vacanteDetalle.modalidad}</span>
+
+                  {/* Descripción completa */}
+                  <div>
+                    <h4 className="font-bold text-black mb-2">{t.jobDescription}</h4>
+                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+                      {detail.description}
+                    </p>
                   </div>
-                  {vacanteDetalle.salarioMin > 0 && (
-                    <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2 col-span-2">
-                      <DollarSign className="w-4 h-4 text-[#5FD3BC] shrink-0" />
-                      <span className="text-sm text-gray-700 font-medium">
-                        {formatCurrency(vacanteDetalle.salarioMin)} COP
-                      </span>
+
+                  {/* Requisitos must-have */}
+                  {detail.mustHave?.length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-black mb-2">{t.essentialRequirements}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {detail.mustHave.map((req: string, i: number) => (
+                          <span key={i} className="px-3 py-1 bg-[#7FFFD4]/20 text-[#1a7a65] rounded-full text-sm font-medium border border-[#5FD3BC]/30">
+                            {req}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
+
+                  {/* Botón postular */}
+                  <button
+                    onClick={() => handleApplyFromModal(detail.id, detail.title)}
+                    disabled={postuladas.has(detail.id)}
+                    style={!postuladas.has(detail.id) ? {
+                      background: "linear-gradient(to right, #7FFFD4, #98FF98)"
+                    } : {}}
+                    className={`w-full h-12 rounded-xl font-bold text-black transition-all ${
+                      postuladas.has(detail.id)
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "hover:opacity-90"
+                    }`}
+                  >
+                    {postuladas.has(detail.id) ? t.appliedCheck : t.applyToVacancy}
+                  </button>
                 </div>
-
-                {/* Descripción completa */}
-                <div>
-                  <h4 className="font-bold text-black mb-2">{t.jobDescription}</h4>
-                  <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
-                    {vacanteDetalle.description}
-                  </p>
-                </div>
-
-                {/* Requisitos must-have */}
-                {vacanteDetalle.mustHave?.length > 0 && (
-                  <div>
-                    <h4 className="font-bold text-black mb-2">{t.essentialRequirements}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {vacanteDetalle.mustHave.map((req: string, i: number) => (
-                        <span key={i} className="px-3 py-1 bg-[#7FFFD4]/20 text-[#1a7a65] rounded-full text-sm font-medium border border-[#5FD3BC]/30">
-                          {req}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Botón postular */}
-                <button
-                  onClick={() => handleApplyFromModal(vacanteDetalle.id, vacanteDetalle.title)}
-                  disabled={postuladas.has(vacanteDetalle.id)}
-                  style={!postuladas.has(vacanteDetalle.id) ? {
-                    background: "linear-gradient(to right, #7FFFD4, #98FF98)"
-                  } : {}}
-                  className={`w-full h-12 rounded-xl font-bold text-black transition-all ${
-                    postuladas.has(vacanteDetalle.id)
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "hover:opacity-90"
-                  }`}
-                >
-                  {postuladas.has(vacanteDetalle.id) ? t.appliedCheck : t.applyToVacancy}
-                </button>
-              </div>
-            </>
-          )}
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

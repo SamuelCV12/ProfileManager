@@ -2,6 +2,7 @@
 "use server";
 
 import prisma from "../../lib/prisma";
+import { calcularCompletitud } from "../../lib/completitud";
 
 export interface RegisterData {
   firstName: string;
@@ -19,28 +20,6 @@ export interface RegisterData {
   avatarUrl?: string;
 }
 
-function calcularCompletitud(data: RegisterData): number {
-  let score = 0;
-
-  // Strings (60 puntos)
-  if (data.firstName?.trim())   score += 10;
-  if (data.lastName?.trim())    score += 10;
-  if (data.desiredRole?.trim()) score += 10;
-  if (data.description?.trim()) score += 10;
-  if (data.birthDate?.trim())   score += 10;
-  if (data.phone?.trim())       score += 10;
-
-  // Arrays (30 puntos)
-  if (data.skills?.length > 0)     score += 10;
-  if (data.education?.length > 0)  score += 10;
-  if (data.experience?.length > 0) score += 10;
-
-  // Avatar (10 puntos)
-  if (data.avatarUrl?.trim()) score += 10;
-
-  return Math.min(score, 100);
-}
-
 export async function registerUser(data: RegisterData) {
   try {
     // Verificar si el email ya existe
@@ -52,7 +31,7 @@ export async function registerUser(data: RegisterData) {
       return { error: "Este correo ya está registrado." };
     }
 
-    const completitud = calcularCompletitud(data);
+    const completitud = calcularCompletitud(data, data.avatarUrl || null);
 
     const newUser = await prisma.user.create({
       data: {

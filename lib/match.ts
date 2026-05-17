@@ -1,50 +1,64 @@
-// lib/match.ts
-// Algoritmo de match determinístico (tu lógica original preservada y exportada)
+import { calcularCompletitud } from "./completitud";
 
+function normalizeWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[-–—/]+/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 0);
+}
 
-/**
- * Calcula el score de match entre un perfil y una vacante.
- * @param profile
- * @param vacancy
- * @returns un score de 0 a 100 indicando qué tan bien el perfil del candidato se ajusta a la vacante.
- *
- * Criterios de Matching:
- * 1. Coincidencia por Cargo (30%): Se analiza el campo "desiredRole" del perfil y se compara con el título de la vacante.
- * 2. Habilidades Must-Have (50%): Se verifica que el candidato tenga las habilidades listadas en "mustHave" de la vacante.
- * 3. Bono por Perfil Completo (20%): Se otorga un bono proporcional a la completitud del perfil.
- */
+function skillMatches(skill: string, profileSkills: string[]): boolean {
+  const needle = skill.toLowerCase().trim();
+  return profileSkills.some(s => {
+    const haystack = s.toLowerCase().trim();
+    if (haystack === needle) return true;
+    if (haystack.startsWith(needle + " ")) return true;
+    if (haystack.endsWith(" " + needle)) return true;
+    if (haystack.includes(" " + needle + " ")) return true;
+    return false;
+  });
+}
+
 export function calculateMatchScore(profile: any, vacancy: any): number {
   if (!profile || !vacancy) return 0;
 
   let score = 0;
 
-  // 1. Coincidencia por Cargo (30%)
-  const profileWords = profile.desiredRole?.toLowerCase().split(" ") || [];
-  const titleWords = vacancy.title.toLowerCase().split(" ");
-  if (profileWords.some((word: string) => word.length > 3 && titleWords.includes(word))) {
-    score += 30;
+  // 1. Coincidencia por Cargo (30%) — proporcional por palabras compartidas
+  const profileWords = normalizeWords(profile.desiredRole || "");
+  const titleWords = normalizeWords(vacancy.title);
+  const commonWords = profileWords.filter(w => titleWords.includes(w));
+  const maxWords = Math.max(profileWords.length, titleWords.length);
+  if (maxWords > 0) {
+    score += (commonWords.length / maxWords) * 30;
   }
 
-  // 2. Habilidades Must-Have (50%)
-  const candidateSkills = [
-    ...(profile.skills || []),
-    ...(profile.education || []),
-    ...(profile.experience || []),
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  let matches = 0;
+  // 2. Habilidades Must-Have (40%) — palabra completa, solo contra skills
+  const candidateSkills = profile.skills || [];
+  let mustHaveMatches = 0;
   vacancy.mustHave?.forEach((skill: string) => {
-    if (candidateSkills.includes(skill.toLowerCase())) matches++;
+    if (skillMatches(skill, candidateSkills)) mustHaveMatches++;
   });
-
   if (vacancy.mustHave?.length > 0) {
-    score += (matches / vacancy.mustHave.length) * 50;
+    score += (mustHaveMatches / vacancy.mustHave.length) * 40;
   }
 
-  // 3. Bono por Perfil Completo (20%)
-  score += ((profile.completitud ?? 0) / 100) * 20;
+  // 3. Bono niceToHave (10%) — skills extra sobre lo requerido
+  // Si no hay deseables definidos, se otorga el 10% completo
+  if (vacancy.niceToHave?.length > 0) {
+    let niceToHaveMatches = 0;
+    vacancy.niceToHave.forEach((skill: string) => {
+      if (skillMatches(skill, candidateSkills)) niceToHaveMatches++;
+    });
+    score += (niceToHaveMatches / vacancy.niceToHave.length) * 10;
+  } else {
+    score += 10;
+  }
 
-  return Math.round(score);
+  // 4. Bono por Perfil Completo (20%)
+  const completitudReal = calcularCompletitud(profile, profile?.avatarUrl || null);
+  score += (completitudReal / 100) * 20;
+
+  return Math.round(Math.min(score, 100));
 }

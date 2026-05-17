@@ -8,8 +8,9 @@ export async function createVacancy(data: {
   title: string;
   description: string;
   modality: string;
-  salaryRange: number | null; // Cambiado a number para Prisma Int
+  salaryRange: number | null;
   mustHave: string[];
+  niceToHave: string[];
 }) {
   try {
     await prisma.vacancy.create({
@@ -20,6 +21,7 @@ export async function createVacancy(data: {
         modality: data.modality,
         salaryRange: data.salaryRange,
         mustHave: data.mustHave,
+        niceToHave: data.niceToHave,
         isActive: true,
       }
     });
@@ -35,21 +37,24 @@ export async function updateVacancy(vacancyId: string, data: {
   title?: string;
   description?: string;
   modality?: string;
-  salaryRange?: number | null; // Cambiado a number para Prisma Int
+  salaryRange?: number | null;
   mustHave?: string[];
+  niceToHave?: string[];
   isActive?: boolean;
 }) {
   try {
+    const updateData: Record<string, unknown> = {};
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.modality !== undefined) updateData.modality = data.modality;
+    if (data.salaryRange !== undefined) updateData.salaryRange = data.salaryRange;
+    if (data.mustHave !== undefined) updateData.mustHave = data.mustHave;
+    if (data.niceToHave !== undefined) updateData.niceToHave = data.niceToHave;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
     await prisma.vacancy.update({
       where: { id: vacancyId },
-      data: {
-        title: data.title,
-        description: data.description,
-        modality: data.modality,
-        salaryRange: data.salaryRange,
-        mustHave: data.mustHave,
-        isActive: data.isActive,
-      }
+      data: updateData,
     });
     revalidatePath("/dashboard-company");
     return { success: true };

@@ -15,7 +15,7 @@ export const esProfile = {
   profileCompleteMsgLow: "Completa tu perfil para mejorar tus oportunidades",
 
   // ── CV processing ──
-  autocompleteCV: "Autocompleta tu perfil con IA",
+  autocompleteCV: "Autocompleta tu perfil",
   uploadCVDesc: "Sube tu CV en PDF, Word o texto y extraeremos la información automáticamente",
   cvSuccess: "¡CV procesado exitosamente!",
   reviewCV: "Revisa los datos extraídos y guarda los cambios",
