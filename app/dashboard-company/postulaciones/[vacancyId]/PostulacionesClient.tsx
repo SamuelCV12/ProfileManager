@@ -60,12 +60,13 @@ function initials(nombre: string) {
 
 export default function PostulacionesClient({
   vacancyId, vacancyTitle, vacancyDescription,
-  vacancyModalidad, vacancySalaryRange, vacancyMustHave,
+  vacancyModalidad, vacancySalaryRange, vacancyMustHave, vacancyNiceToHave,
   companyInitials, postulaciones: postulacionesIniciales,
 }: {
   vacancyId: string; vacancyTitle: string; vacancyDescription: string;
   vacancyModalidad: string; vacancySalaryRange: string | null;
-  vacancyMustHave: string[]; companyInitials: string;
+  vacancyMustHave: string[]; vacancyNiceToHave: string[];
+  companyInitials: string;
   postulaciones: Postulacion[];
 }) {
   const { t } = useLanguage();
@@ -150,8 +151,8 @@ export default function PostulacionesClient({
 
         {/* info de la vacante */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex-1">
+          <div className="flex flex-col gap-4">
+            <div>
               <h1 className="text-3xl font-bold text-black mb-1">{translatedVacancy.title}</h1>
               <p className="text-gray-500 text-sm mb-4">{translatedVacancy.description}</p>
               <div className="flex flex-wrap gap-3 text-sm text-gray-600">
@@ -169,17 +170,32 @@ export default function PostulacionesClient({
               </div>
             </div>
 
-            {/* must have skills */}
-            {vacancyMustHave.length > 0 && (
-              <div className="shrink-0">
-                <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">{t.skillsRequired}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {vacancyMustHave.map((s, i) => (
-                    <Badge key={i} variant="outline" className="bg-[#7FFFD4]/20 text-black border-[#5FD3BC] text-xs">
-                      {s}
-                    </Badge>
-                  ))}
-                </div>
+            {(vacancyMustHave.length > 0 || vacancyNiceToHave.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                {vacancyMustHave.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">{t.skillsRequired}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {vacancyMustHave.map((s, i) => (
+                        <Badge key={i} variant="outline" className="bg-[#7FFFD4]/20 text-black border-[#5FD3BC] text-xs">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {vacancyNiceToHave.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">{t.niceToHaveLabel}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {vacancyNiceToHave.map((s, i) => (
+                        <Badge key={i} variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 text-xs">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -317,11 +333,16 @@ export default function PostulacionesClient({
 
                   <div className="p-5 space-y-3 flex-1">
                     <div className="flex flex-wrap gap-1.5">
-                      {c.habilidades.slice(0, 3).map((h, i) => (
-                        <span key={i} className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${vacancyMustHave.includes(h) ? 'bg-[#7FFFD4]/20 text-[#1a7a65]' : 'bg-gray-100 text-gray-500'}`}>
+                      {c.habilidades.slice(0, 2).map((h, i) => (
+                        <span key={i} className={`max-w-[90px] truncate px-2 py-0.5 rounded-full text-[10px] font-medium ${vacancyMustHave.includes(h) ? 'bg-[#7FFFD4]/20 text-[#1a7a65]' : 'bg-gray-100 text-gray-500'}`}>
                           {h}
                         </span>
                       ))}
+                      {c.habilidades.length > 2 && (
+                        <span className="text-[10px] text-gray-400 font-medium px-2 py-0.5">
+                          +{c.habilidades.length - 2}
+                        </span>
+                      )}
                     </div>
 
                     <div className="space-y-1.5 text-[11px] text-gray-500">
@@ -418,7 +439,7 @@ export default function PostulacionesClient({
                       <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">{t.skills}</h4>
                       <div className="flex flex-wrap gap-1.5">
                         {selectedCandidate.habilidades.map((skill, i) => (
-                          <Badge key={i} variant="outline" className={`text-[10px] font-bold ${vacancyMustHave.includes(skill) ? 'bg-[#7FFFD4]/20 border-[#5FD3BC] text-[#1a7a65]' : 'bg-white border-gray-100 text-gray-500'}`}>
+                          <Badge key={i} variant="outline" className={`max-w-[140px] truncate text-[10px] font-bold ${vacancyMustHave.includes(skill) ? 'bg-[#7FFFD4]/20 border-[#5FD3BC] text-[#1a7a65]' : 'bg-white border-gray-100 text-gray-500'}`}>
                             {skill}
                           </Badge>
                         ))}

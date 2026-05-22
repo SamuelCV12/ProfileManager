@@ -96,6 +96,7 @@ export default async function PostulacionesPage({ params }: Props) {
       vacancyModalidad={vacancy.modality}
       vacancySalaryRange={formatSalary(vacancy.salaryRange)}
       vacancyMustHave={vacancy.mustHave}
+      vacancyNiceToHave={vacancy.niceToHave}
       companyInitials={initials}
       postulaciones={postulaciones}
     />
